@@ -1,0 +1,159 @@
+experiment:
+  name: qwen35_08b #might be generated from model name and timestamp in the future
+  output_dir: outputs/qwen35_08b_cl
+  results_dir: results/qwen35_08b_cl
+  seed: [33, 42, 100]
+
+model:
+  name: Qwen/Qwen3.5-0.8B
+  trust_remote_code: true
+  torch_dtype: auto
+
+continual_learning:
+  task_order:
+    - task_1
+    - task_2
+    - task_3
+
+  evaluate_base_model: true
+  evaluate_all_tasks_after_each_phase: true
+
+  # R matrix convention:
+  # R[0, j] = base model performance on task j
+  # R[i, j] = performance on task j after training through task i
+  compute_metrics:
+    - final_avg_accuracy
+    - bwt
+    - fwt
+    - avg_forgetting
+
+tasks:
+  task_1:
+    name: fomc_500
+    task_type: multiple_choice
+    train_file: ../../data/llm-cl-500/FOMC/train.jsonl
+    val_file: ../../data/llm-cl-500/FOMC/val.jsonl
+    test_file: ../../data/llm-cl-500/FOMC/test.jsonl
+
+  task_2:
+    name: scienceqa_500
+    task_type: multiple_choice
+    train_file: ../../data/llm-cl-500/ScienceQA/train.jsonl
+    val_file: ../../data/llm-cl-500/ScienceQA/val.jsonl
+    test_file: ../../data/llm-cl-500/ScienceQA/test.jsonl
+
+  task_3:
+    name: numgluecm_500
+    task_type: multiple_choice
+    train_file: ../../data/llm-cl-500/NumGLUECM/train.jsonl
+    val_file: ../../data/llm-cl-500/NumGLUECM/val.jsonl
+    test_file: ../../data/llm-cl-500/NumGLUECM/test.jsonl
+
+# data:
+#   max_length: 1024
+#   prompt_format: multiple_choice_json
+#   completion_only_loss: true
+
+#   expected_fields:
+#     - id
+#     - question
+#     - choices
+#     - answer
+
+# prompting:
+#   multiple_choice_json:
+#     system_message: null
+#     instruction: >
+#       Return only valid JSON.
+#       Do not explain.
+#       Do not show reasoning.
+#       The JSON must have exactly this format: {"answer": "A"}.
+#     enable_thinking: false
+
+training:
+  method: lora_sft
+  trainer: trl_sft_trainer
+
+  num_train_epochs: 1
+  learning_rate: 0.0001
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  weight_decay: 0.01
+
+  per_device_train_batch_size: 1
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 8
+  gradient_checkpointing: true
+  max_grad_norm: 1.0
+
+  bf16: auto
+  fp16: false
+  packing: false
+
+lora:
+  enabled: true
+  r: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  bias: none
+  task_type: CAUSAL_LM
+  target_modules: all-linear
+
+checkpointing:
+  eval_strategy: steps
+  eval_steps: 50
+  save_strategy: steps
+  save_steps: 50
+  save_total_limit: 2
+
+  load_best_model_at_end: true
+
+  # During each phase, select the checkpoint using the current task validation loss.
+  # Example during task_2: metric_for_best_model = eval_task_2_loss
+  metric_for_best_model_template: eval_{task_id}_loss
+  greater_is_better: false
+
+generation_eval:
+  enabled: true
+
+  # Important for multiple-choice benchmarking with Qwen 0.8B.
+  enable_thinking: false
+  do_sample: false
+  max_new_tokens: 32
+
+  eos_token_id: auto
+  pad_token_id: eos
+
+  metrics:
+    - accuracy
+    - json_valid_rate
+    - answer_parse_rate
+    - format_error_rate
+
+  evaluate_splits:
+    - test
+
+  save_raw_generations: true
+
+drift_eval:
+  enabled: false
+
+  # Turn this on only after the basic CL matrix works.
+  anchors:
+    base_model: true
+    phase0_model: false
+
+  metrics:
+    - kl_vs_base
+    - entropy_mean
+    - top2_margin_mean
+
+seeds:
+  - 42
+
+logging:
+  report_to: none
+  logging_steps: 10
+  save_phase_summary: true
+  save_task_matrix: true
+  save_all_results_csv: true
