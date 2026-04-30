@@ -2,6 +2,7 @@ experiment:
   name: qwen35_08b #might be generated from model name and timestamp in the future
   output_dir: outputs/qwen35_08b_cl
   results_dir: results/qwen35_08b_cl
+  num_epochs: 1
   seed: [33, 42, 100]
 
 model:
@@ -29,25 +30,22 @@ continual_learning:
 
 tasks:
   task_1:
-    name: fomc_500
-    task_type: multiple_choice
-    train_file: ../../data/llm-cl-500/FOMC/train.jsonl
-    val_file: ../../data/llm-cl-500/FOMC/val.jsonl
-    test_file: ../../data/llm-cl-500/FOMC/test.jsonl
+    name: fomc
+    train_file: data/llm-cl-500/FOMC/train.json
+    val_file: data/llm-cl-500/FOMC/eval.json
+    test_file: data/llm-cl-500/FOMC/test.json
 
   task_2:
-    name: scienceqa_500
-    task_type: multiple_choice
-    train_file: ../../data/llm-cl-500/ScienceQA/train.jsonl
-    val_file: ../../data/llm-cl-500/ScienceQA/val.jsonl
-    test_file: ../../data/llm-cl-500/ScienceQA/test.jsonl
+    name: scienceqa
+    train_file: data/llm-cl-500/ScienceQA/train.json
+    val_file: data/llm-cl-500/ScienceQA/eval.json
+    test_file: data/llm-cl-500/ScienceQA/test.json
 
   task_3:
-    name: numgluecm_500
-    task_type: multiple_choice
-    train_file: ../../data/llm-cl-500/NumGLUECM/train.jsonl
-    val_file: ../../data/llm-cl-500/NumGLUECM/val.jsonl
-    test_file: ../../data/llm-cl-500/NumGLUECM/test.jsonl
+    name: numgluecm
+    train_file: data/llm-cl-500/NumGLUE-cm/train.json
+    val_file: data/llm-cl-500/NumGLUE-cm/eval.json
+    test_file: data/llm-cl-500/NumGLUE-cm/test.json
 
 # data:
 #   max_length: 1024
