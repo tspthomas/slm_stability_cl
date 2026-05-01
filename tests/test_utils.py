@@ -1,24 +1,23 @@
 # create code to test the utils.py file
 
+import sys
 import unittest
 
 import numpy as np
 import torch
 
-import sys
 sys.path.insert(0, "./src")
 from utils import (
-    set_seed,
+    extract_multiple_choice,
+    extract_number,
     get_device,
     is_config_lora,
-    strip_generation_artifacts,
-    normalize_number,
-    extract_number,
-    extract_multiple_choice,
     normalize_answer,
-    MULTIPLE_CHOICE_TASKS,
-    NUMERIC_TASKS,
+    normalize_number,
+    set_seed,
+    strip_generation_artifacts,
 )
+
 
 class TestUtils(unittest.TestCase):
 

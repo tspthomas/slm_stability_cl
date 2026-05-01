@@ -1,23 +1,27 @@
 import gc
 
-import yaml
 import torch
-
-from tqdm.auto import tqdm
-from torch.optim import AdamW
-
+import yaml
 from datasets import load_dataset
 from torch.utils.data import DataLoader
-from peft import LoraConfig, get_peft_model, TaskType, PeftModel
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from stability import compute_reference_stability_metrics
-from evaluate import evaluate_reference_set, evaluate_checkpoint_on_all_tasks
-from utils import get_device, set_seed, is_config_lora
+from constants import DEFAULT_SYSTEM_PROMPT
 from data import ChatSFTDataset, SFTCollator
-from constants import DEFAULT_SYSTEM_PROMPT, TASK_PROMPT_MAP, TASK_TRACE_SCIENCEQA
+from evaluate import evaluate_checkpoint_on_all_tasks, evaluate_reference_set
+from stability import compute_reference_stability_metrics
+from train import build_lora_model, train_one_task
+from utils import get_device, is_config_lora, set_seed
 
-def load_data_loader(task_name: str, data_path: str, tokenizer, shuffle: bool, max_length: int, batch_size: int) -> DataLoader:
+
+def load_data_loader(
+    task_name: str,
+    data_path: str,
+    tokenizer,
+    shuffle: bool,
+    max_length: int,
+    batch_size: int,
+) -> DataLoader:
     dataset = load_dataset("json", data_files=data_path, split="train")
 
     sft_dataset = ChatSFTDataset(
@@ -35,116 +39,6 @@ def load_data_loader(task_name: str, data_path: str, tokenizer, shuffle: bool, m
         shuffle=shuffle,
         collate_fn=SFTCollator(tokenizer),
     )
-
-
-def build_lora_model(model, config):
-    lora_cfg = config["peft"]
-
-    peft_config = LoraConfig(
-        r=lora_cfg.get("r", 8),
-        lora_alpha=lora_cfg.get("lora_alpha", 16),
-        lora_dropout=lora_cfg.get("lora_dropout", 0.05),
-        bias=lora_cfg.get("bias", "none"),
-        task_type=TaskType.CAUSAL_LM,
-        target_modules=lora_cfg.get("target_modules", "all-linear"),
-    )
-
-    model = get_peft_model(model, peft_config)
-    model.print_trainable_parameters()
-
-    return model
-
-
-def train_one_task(
-    model,
-    train_data_loader,
-    config,
-    device,
-):
-    num_epochs = config["training"]["num_epochs"]
-    learning_rate = float(config["training"].get("learning_rate", 5e-5))
-    weight_decay = float(config["training"].get("weight_decay", 0.0))
-    grad_accum_steps = config["training"].get("gradient_accumulation_steps", 1)
-    max_grad_norm = config["training"].get("max_grad_norm", 1.0)
-    max_train_batches = config["training"].get("max_train_batches")  # optional debug
-
-    model.train()
-    model.config.use_cache = False
-
-    if config["training"].get("gradient_checkpointing", False):
-        model.gradient_checkpointing_enable()
-
-        if is_config_lora(config):
-            model.enable_input_require_grads()
-
-    trainable_params = [p for p in model.parameters() if p.requires_grad]
-
-    optimizer = AdamW(
-        trainable_params,
-        lr=learning_rate,
-        weight_decay=weight_decay,
-    )
-
-    total_batches = len(train_data_loader)
-    if max_train_batches is not None:
-        total_batches = min(total_batches, max_train_batches)
-
-    total_steps = num_epochs * total_batches
-    progress_bar = tqdm(range(total_steps), desc="Training")
-
-    for epoch in range(num_epochs):
-        epoch_loss = 0.0
-        batch_count = 0
-        optimizer_step_count = 0
-
-        optimizer.zero_grad(set_to_none=True)
-
-        for batch_idx, batch in enumerate(train_data_loader):
-            if max_train_batches is not None and batch_idx >= max_train_batches:
-                break
-
-            batch = {k: v.to(device) for k, v in batch.items()}
-
-            outputs = model(**batch)
-            loss = outputs.loss
-
-            # Scale loss for gradient accumulation.
-            scaled_loss = loss / grad_accum_steps
-            scaled_loss.backward()
-
-            if (batch_idx + 1) % grad_accum_steps == 0:
-                torch.nn.utils.clip_grad_norm_(trainable_params, max_grad_norm)
-
-                optimizer.step()
-                optimizer.zero_grad(set_to_none=True)
-                optimizer_step_count += 1
-
-            epoch_loss += loss.item()
-            batch_count += 1
-            progress_bar.update(1)
-
-        # Handle leftover gradients if number of batches is not divisible by grad_accum_steps.
-        if batch_count % grad_accum_steps != 0:
-            torch.nn.utils.clip_grad_norm_(trainable_params, max_grad_norm)
-
-            optimizer.step()
-            optimizer.zero_grad(set_to_none=True)
-            optimizer_step_count += 1
-
-        avg_loss = epoch_loss / max(batch_count, 1)
-
-        print(
-            f"Epoch {epoch + 1}/{num_epochs} - "
-            f"loss: {avg_loss:.4f} - "
-            f"optimizer steps: {optimizer_step_count}"
-        )
-
-    # Drop optimizer state after the task.
-    del optimizer
-
-    gc.collect()
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
 
 
 def main(config_path: str):
@@ -232,24 +126,28 @@ def main(config_path: str):
         # print number of trainable parameters
         trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
         total_params = sum(p.numel() for p in model.parameters())
-        print(f"Trainable parameters: {trainable_params} / {total_params} ({trainable_params / total_params:.2%})")
+        print(
+            f"Trainable parameters: {trainable_params} / {total_params} ({trainable_params / total_params:.2%})"
+        )
 
         num_epochs = config["training"]["num_epochs"]
         for step, task in enumerate(task_order, start=1):
             task_config = config["tasks"][task]
-            task_name = task_config['name']
+            task_name = task_config["name"]
 
             print(f"Training model on task: {task}-{task_name}")
-                        
+
             train_data_loader = load_data_loader(
                 task_name=task_name,
-                data_path=task_config["train_file"], 
+                data_path=task_config["train_file"],
                 tokenizer=tokenizer,
                 shuffle=True,
                 max_length=config["training"]["max_length"],
-                batch_size=config["training"]["batch_size"]
+                batch_size=config["training"]["batch_size"],
             )
-            print(f"Number of training examples for task {task}-{task_name}: {len(train_data_loader.dataset)}")
+            print(
+                f"Number of training examples for task {task}-{task_name}: {len(train_data_loader.dataset)}"
+            )
 
             # train on current task
             train_one_task(
@@ -258,7 +156,7 @@ def main(config_path: str):
                 config=config,
                 device=device,
             )
-            
+
             # evaluate on all tasks after training on current task
             evaluate_checkpoint_on_all_tasks(
                 model=model,
@@ -271,9 +169,11 @@ def main(config_path: str):
                 checkpoint_task=task,
                 seed=seed,
                 device=device,
-                split_file_key=config["experiment"].get("eval_split_file_key", "val_file"),
+                split_file_key=config["experiment"].get(
+                    "eval_split_file_key", "val_file"
+                ),
             )
-            
+
             # evaluate reference set after training on current task
             evaluate_reference_set(
                 model=model,
@@ -302,26 +202,33 @@ def main(config_path: str):
 
             # save model checkpoint
             print(f"Saving model checkpoint for task: {task}-{task_name}")
-            model_save_path = f"{config['experiment']['output_dir']}/model_{task}_{seed}"
-            model_save_path = model_save_path + "_lora" if is_config_lora(config) else model_save_path
+            model_save_path = (
+                f"{config['experiment']['output_dir']}/model_{task}_{seed}"
+            )
+            model_save_path = (
+                model_save_path + "_lora" if is_config_lora(config) else model_save_path
+            )
 
             model.save_pretrained(model_save_path)
             tokenizer.save_pretrained(model_save_path)
 
             # store config
             with open(f"{model_save_path}/training_config.yaml", "w") as f:
-                yaml.dump(config, f)            
+                yaml.dump(config, f)
 
             # cleanup resources
-            del train_data_loader 
+            del train_data_loader
 
             gc.collect()
             torch.cuda.empty_cache()
 
+
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Run longitudinal personalization experiment.")
+    parser = argparse.ArgumentParser(
+        description="Run longitudinal personalization experiment."
+    )
     parser.add_argument(
         "--config",
         type=str,

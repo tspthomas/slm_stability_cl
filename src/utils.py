@@ -50,7 +50,7 @@ def is_config_lora(config: dict) -> bool:
 
 
 def strip_generation_artifacts(text: str) -> str:
-    """"
+    """ "
     Clean the generated text by removing common artifacts such as thinking blocks, chat markers, and markdown emphasis.
 
     Args:
