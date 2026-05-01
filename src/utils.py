@@ -1,3 +1,7 @@
+"""
+This module defines utility functions for handling text data and model inference.
+"""
+
 import re
 import torch
 import numpy as np
@@ -10,7 +14,7 @@ def set_seed(seed: int) -> None:
     Set the random seed for reproducibility.
 
     Args:
-        seed (int): The seed value to set for random number generators.
+        seed: The seed value to set for random number generators.
     """
     torch.manual_seed(seed)
     np.random.seed(seed)
@@ -23,7 +27,7 @@ def get_device() -> str:
     Determine the available device (GPU, MPS, or CPU) for computation.
 
     Returns:
-        str: The name of the device to use ("cuda", "mps", or "cpu").
+        The name of the device to use ("cuda", "mps", or "cpu").
     """
     if torch.backends.mps.is_available():
         return "mps"
@@ -37,15 +41,23 @@ def is_config_lora(config: dict) -> bool:
     Check if the provided configuration specifies using LoRA for parameter-efficient fine-tuning.
 
     Args:
-        config (dict): The configuration dictionary to check.
+        config: The configuration dictionary to check.
     Returns:
-        bool: True if LoRA is specified in the configuration, False otherwise.
+        True if LoRA is specified in the configuration, False otherwise.
     """
     is_lora = config.get("peft", {}) is not None
-    return is_lora and config["peft"].get("method", "") == "lora"
+    return is_lora and config.get("peft", {}).get("method", "") == "lora"
 
 
 def strip_generation_artifacts(text: str) -> str:
+    """"
+    Clean the generated text by removing common artifacts such as thinking blocks, chat markers, and markdown emphasis.
+
+    Args:
+        text: The generated text to clean.
+    Returns:
+        The cleaned text with artifacts removed.
+    """
     text = str(text).strip()
 
     # Remove thinking blocks and common chat markers.
@@ -60,6 +72,15 @@ def strip_generation_artifacts(text: str) -> str:
 
 
 def normalize_number(text: str) -> str:
+    """
+    Normalize a numeric string by removing commas, trailing punctuation, and converting to a standard numeric format.
+
+    Args:
+        text: The numeric string to normalize.
+
+    Returns:
+        The normalized numeric string.
+    """
     text = text.strip()
     text = text.replace(",", "")
 
@@ -77,6 +98,15 @@ def normalize_number(text: str) -> str:
 
 
 def extract_number(text: str) -> str:
+    """
+    Extract a number from the generated text.
+
+    Args:
+        text: The generated text to extract the number from.
+
+    Returns:
+        The extracted number as a string.
+    """
     text = strip_generation_artifacts(text)
 
     # Prefer text after common final-answer markers.
@@ -104,6 +134,15 @@ def extract_number(text: str) -> str:
 
 
 def extract_multiple_choice(text: str) -> str:
+    """
+    Extract a multiple-choice option from the generated text.
+
+    Args:
+        text: The generated text to extract the option from.
+
+    Returns:
+        The extracted multiple-choice option as a string.
+    """
     text = strip_generation_artifacts(text)
 
     # Prefer explicit answer markers.
@@ -135,6 +174,15 @@ def extract_multiple_choice(text: str) -> str:
 
 
 def normalize_answer(text: str, task_name: str = None) -> str:
+    """
+    Normalize the model's generated answer based on the task type. For multiple-choice tasks, extract the option letter.
+
+    Args:
+        text: The generated text containing the answer.
+        task_name: The name of the task to determine the normalization method.
+    Returns:
+        The normalized answer string.
+    """
     text = strip_generation_artifacts(text)
 
     if task_name in MULTIPLE_CHOICE_TASKS:
