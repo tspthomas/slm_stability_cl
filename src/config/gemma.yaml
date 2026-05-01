@@ -2,14 +2,33 @@ experiment:
   name: gemma3_1b
   output_dir: outputs/gemma3_1b_cl
   results_dir: results/gemma3_1b_cl
-  num_epochs: 1
-  max_new_tokens: 128
   seed: [33]
+
+training:
+  num_epochs: 1
+  batch_size: 2
+  max_train_batches: 10
+  gradient_accumulation_steps: 8
+  learning_rate: 5e-5
+  max_length: 512
+  gradient_checkpointing: true
+
+evaluation:
+  max_new_tokens: 128
+  max_examples: 10
 
 model:
   name: google/gemma-3-1b-it
   trust_remote_code: true
   torch_dtype: auto
+
+peft:
+  method: lora
+  r: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  bias: none
+  target_modules: all-linear
 
 continual_learning:
   task_order:

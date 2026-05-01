@@ -32,6 +32,19 @@ def get_device() -> str:
     return "cpu"
 
 
+def is_config_lora(config: dict) -> bool:
+    """
+    Check if the provided configuration specifies using LoRA for parameter-efficient fine-tuning.
+
+    Args:
+        config (dict): The configuration dictionary to check.
+    Returns:
+        bool: True if LoRA is specified in the configuration, False otherwise.
+    """
+    is_lora = config.get("peft", {}) is not None
+    return is_lora and config["peft"].get("method", "") == "lora"
+
+
 def strip_generation_artifacts(text: str) -> str:
     text = str(text).strip()
 

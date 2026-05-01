@@ -8,10 +8,11 @@ from torch.optim import AdamW
 
 from datasets import load_dataset
 from torch.utils.data import DataLoader
+from peft import LoraConfig, get_peft_model, TaskType, PeftModel
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from evaluate import evaluate_accuracy, save_eval_results, evaluate_checkpoint_on_all_tasks
-from utils import get_device, set_seed
+from utils import get_device, set_seed, is_config_lora
 from data import ChatSFTDataset, SFTCollator
 from constants import DEFAULT_SYSTEM_PROMPT, TASK_PROMPT_MAP, TASK_TRACE_SCIENCEQA
 
@@ -35,6 +36,24 @@ def load_data_loader(task_name: str, data_path: str, tokenizer, shuffle: bool, m
     )
 
 
+def build_lora_model(model, config):
+    lora_cfg = config["peft"]
+
+    peft_config = LoraConfig(
+        r=lora_cfg.get("r", 8),
+        lora_alpha=lora_cfg.get("lora_alpha", 16),
+        lora_dropout=lora_cfg.get("lora_dropout", 0.05),
+        bias=lora_cfg.get("bias", "none"),
+        task_type=TaskType.CAUSAL_LM,
+        target_modules=lora_cfg.get("target_modules", "all-linear"),
+    )
+
+    model = get_peft_model(model, peft_config)
+    model.print_trainable_parameters()
+
+    return model
+
+
 def train_one_task(
     model,
     train_data_loader,
@@ -50,6 +69,12 @@ def train_one_task(
 
     model.train()
     model.config.use_cache = False
+
+    if config["training"].get("gradient_checkpointing", False):
+        model.gradient_checkpointing_enable()
+
+        if is_config_lora(config):
+            model.enable_input_require_grads()
 
     trainable_params = [p for p in model.parameters() if p.requires_grad]
 
@@ -162,7 +187,6 @@ def main(config_path: str):
             tokenizer=tokenizer,
             config=config,
             task_order=task_order,
-            task_prompt_map=TASK_PROMPT_MAP,
             system_prompt=DEFAULT_SYSTEM_PROMPT,
             step=0,
             checkpoint_task="base",
@@ -170,6 +194,16 @@ def main(config_path: str):
             device=device,
             split_file_key=config["experiment"].get("eval_split_file_key", "val_file"),
         )
+
+        # optionally wrap with LoRA for parameter-efficient fine-tuning
+        if is_config_lora(config):
+            print("Wrapping model with LoRA for parameter-efficient fine-tuning.")
+            model = build_lora_model(model, config)
+
+        # print number of trainable parameters
+        trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        total_params = sum(p.numel() for p in model.parameters())
+        print(f"Trainable parameters: {trainable_params} / {total_params} ({trainable_params / total_params:.2%})")
 
         num_epochs = config["training"]["num_epochs"]
         for step, task in enumerate(task_order, start=1):
@@ -202,7 +236,6 @@ def main(config_path: str):
                 tokenizer=tokenizer,
                 config=config,
                 task_order=task_order,
-                task_prompt_map=TASK_PROMPT_MAP,
                 system_prompt=DEFAULT_SYSTEM_PROMPT,
                 step=step,
                 checkpoint_task=task,
@@ -214,6 +247,8 @@ def main(config_path: str):
             # save model checkpoint
             print(f"Saving model checkpoint for task: {task}-{task_name}")
             model_save_path = f"{config['experiment']['output_dir']}/model_{task}_{seed}"
+            model_save_path = model_save_path + "_lora" if is_config_lora(config) else model_save_path
+
             model.save_pretrained(model_save_path)
             tokenizer.save_pretrained(model_save_path)
 

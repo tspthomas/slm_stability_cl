@@ -76,7 +76,6 @@ def evaluate_checkpoint_on_all_tasks(
     tokenizer,
     config: Dict[str, Any],
     task_order: List[str],
-    task_prompt_map: Dict[str, str],
     system_prompt: str,
     step: int,
     checkpoint_task: str,
@@ -108,7 +107,7 @@ def evaluate_checkpoint_on_all_tasks(
             task_prompt=task_prompt,
             system_prompt=system_prompt,
             device=device,
-            max_examples=config["evaluation"].get("max_eval_examples"),
+            max_examples=config["evaluation"].get("max_examples"),
             max_new_tokens=config["evaluation"]["max_new_tokens"],
         )
 
@@ -200,6 +199,7 @@ def evaluate_accuracy(
     dataset = load_dataset("json", data_files=data_file, split="train")
 
     if max_examples is not None:
+        print(f"Limiting evaluation to max_examples={max_examples}")
         dataset = dataset.select(range(min(max_examples, len(dataset))))
 
     model.eval()

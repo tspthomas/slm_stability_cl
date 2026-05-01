@@ -6,19 +6,29 @@ experiment:
 
 training:
   num_epochs: 1
-  batch_size: 1
-  gradient_accumulation_steps: 4
+  batch_size: 2
+  max_train_batches: 10
+  gradient_accumulation_steps: 8
   learning_rate: 5e-5
   max_length: 512
-  # max_train_batches: 5
+  gradient_checkpointing: true
 
 evaluation:
-  max_new_tokens: 256
+  max_new_tokens: 128
+  max_examples: 10
 
 model:
   name: Qwen/Qwen3.5-0.8B
   trust_remote_code: true
   torch_dtype: auto
+
+peft:
+  method: lora
+  r: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  bias: none
+  target_modules: all-linear
 
 continual_learning:
   task_order:
