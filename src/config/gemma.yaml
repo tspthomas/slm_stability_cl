@@ -1,22 +1,13 @@
 experiment:
-  name: qwen35_08b
-  output_dir: outputs/qwen35_08b_cl
-  results_dir: results/qwen35_08b_cl
+  name: gemma3_1b
+  output_dir: outputs/gemma3_1b_cl
+  results_dir: results/gemma3_1b_cl
+  num_epochs: 1
+  max_new_tokens: 128
   seed: [33]
 
-training:
-  num_epochs: 1
-  batch_size: 1
-  gradient_accumulation_steps: 8
-  learning_rate: 5e-5
-  max_length: 512
-  # max_train_batches: 5
-
-evaluation:
-  max_new_tokens: 256
-
 model:
-  name: Qwen/Qwen3.5-0.8B
+  name: google/gemma-3-1b-it
   trust_remote_code: true
   torch_dtype: auto
 

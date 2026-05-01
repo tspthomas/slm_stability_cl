@@ -26,11 +26,12 @@ class ChatSFTDataset(TorchDataset):
     def __getitem__(self, idx):
         ex = self.dataset[int(idx)]
 
-        user_text = f"{self.task_prompt}\n\n{ex['prompt'].strip()}"
+        # user_text = f"{}\n\n{ex['prompt'].strip()}"
+        user_text = f"{ex['prompt'].strip()}\n\n{self.task_prompt}"
         answer_text = str(ex["answer"]).strip()
 
         prompt_messages = [
-            {"role": "system", "content": self.system_prompt},
+            # {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": user_text},
         ]
 

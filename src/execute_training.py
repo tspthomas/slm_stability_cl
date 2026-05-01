@@ -10,20 +10,13 @@ from datasets import load_dataset
 from torch.utils.data import DataLoader
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from evaluate import evaluate_accuracy, save_eval_results
+from evaluate import evaluate_accuracy, save_eval_results, evaluate_checkpoint_on_all_tasks
 from utils import get_device, set_seed
 from data import ChatSFTDataset, SFTCollator
-from constants import DEFAULT_SYSTEM_PROMPT, QWEN_MATH_PROMPT, QWEN_MULTIPLE_CHOICE_PROMPT
+from constants import DEFAULT_SYSTEM_PROMPT, TASK_PROMPT_MAP
 
 
-TASK_PROMPT_MAP = {
-    "scienceqa": QWEN_MULTIPLE_CHOICE_PROMPT,
-    "fomc": QWEN_MULTIPLE_CHOICE_PROMPT,
-    "numglue": QWEN_MATH_PROMPT,
-}
-
-
-def load_data_loader(task_name: str, data_path: str, tokenizer, shuffle: bool) -> DataLoader:
+def load_data_loader(task_name: str, data_path: str, tokenizer, shuffle: bool, max_length: int, batch_size: int) -> DataLoader:
     dataset = load_dataset("json", data_files=data_path, split="train")
 
     sft_dataset = ChatSFTDataset(
@@ -31,16 +24,102 @@ def load_data_loader(task_name: str, data_path: str, tokenizer, shuffle: bool) -
         tokenizer=tokenizer,
         task_prompt=TASK_PROMPT_MAP.get(task_name, ""),
         system_prompt=DEFAULT_SYSTEM_PROMPT,
-        max_length=512,
+        max_length=max_length,
         enable_thinking=False,
     )
 
     return DataLoader(
         sft_dataset,
-        batch_size=1,
+        batch_size=batch_size,
         shuffle=shuffle,
         collate_fn=SFTCollator(tokenizer),
     )
+
+
+def train_one_task(
+    model,
+    train_data_loader,
+    config,
+    device,
+):
+    num_epochs = config["training"]["num_epochs"]
+    learning_rate = float(config["training"].get("learning_rate", 5e-5))
+    weight_decay = float(config["training"].get("weight_decay", 0.0))
+    grad_accum_steps = config["training"].get("gradient_accumulation_steps", 1)
+    max_grad_norm = float(config["training"].get("max_grad_norm", 1.0))
+    max_train_batches = config["training"].get("max_train_batches")  # optional debug
+
+    model.train()
+    model.config.use_cache = False
+
+    trainable_params = [p for p in model.parameters() if p.requires_grad]
+
+    optimizer = AdamW(
+        trainable_params,
+        lr=learning_rate,
+        weight_decay=weight_decay,
+    )
+
+    total_batches = len(train_data_loader)
+    if max_train_batches is not None:
+        total_batches = min(total_batches, max_train_batches)
+
+    total_steps = num_epochs * total_batches
+    progress_bar = tqdm(range(total_steps), desc="Training")
+
+    for epoch in range(num_epochs):
+        epoch_loss = 0.0
+        batch_count = 0
+        optimizer_step_count = 0
+
+        optimizer.zero_grad(set_to_none=True)
+
+        for batch_idx, batch in enumerate(train_data_loader):
+            if max_train_batches is not None and batch_idx >= max_train_batches:
+                break
+
+            batch = {k: v.to(device) for k, v in batch.items()}
+
+            outputs = model(**batch)
+            loss = outputs.loss
+
+            # Scale loss for gradient accumulation.
+            scaled_loss = loss / grad_accum_steps
+            scaled_loss.backward()
+
+            if (batch_idx + 1) % grad_accum_steps == 0:
+                torch.nn.utils.clip_grad_norm_(trainable_params, max_grad_norm)
+
+                optimizer.step()
+                optimizer.zero_grad(set_to_none=True)
+                optimizer_step_count += 1
+
+            epoch_loss += loss.item()
+            batch_count += 1
+            progress_bar.update(1)
+
+        # Handle leftover gradients if number of batches is not divisible by grad_accum_steps.
+        if batch_count % grad_accum_steps != 0:
+            torch.nn.utils.clip_grad_norm_(trainable_params, max_grad_norm)
+
+            optimizer.step()
+            optimizer.zero_grad(set_to_none=True)
+            optimizer_step_count += 1
+
+        avg_loss = epoch_loss / max(batch_count, 1)
+
+        print(
+            f"Epoch {epoch + 1}/{num_epochs} - "
+            f"loss: {avg_loss:.4f} - "
+            f"optimizer steps: {optimizer_step_count}"
+        )
+
+    # Drop optimizer state after the task.
+    del optimizer
+
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
 
 def main(config_path: str):
@@ -76,82 +155,61 @@ def main(config_path: str):
         )
         model.to(device)
 
-        # build trainable model
+        # evaluate base model
+        task_order = config["continual_learning"]["task_order"]
 
-        # build optimizer
-        optimizer = AdamW(model.parameters(), lr=5e-5)
+        evaluate_checkpoint_on_all_tasks(
+            model=model,
+            tokenizer=tokenizer,
+            config=config,
+            task_order=task_order,
+            task_prompt_map=TASK_PROMPT_MAP,
+            system_prompt=DEFAULT_SYSTEM_PROMPT,
+            step=0,
+            checkpoint_task="base",
+            seed=seed,
+            device=device,
+            split_file_key=config["experiment"].get("eval_split_file_key", "val_file"),
+        )
 
-        num_epochs = config["experiment"]["num_epochs"]
-        for task in config["continual_learning"]["task_order"]:
+        num_epochs = config["training"]["num_epochs"]
+        for step, task in enumerate(task_order, start=1):
             task_config = config["tasks"][task]
             task_name = task_config['name']
-            
-            # train model
+
             print(f"Training model on task: {task}-{task_name}")
+                        
             train_data_loader = load_data_loader(
                 task_name=task_name,
                 data_path=task_config["train_file"], 
                 tokenizer=tokenizer,
-                shuffle=True
+                shuffle=True,
+                max_length=config["training"]["max_length"],
+                batch_size=config["training"]["batch_size"]
             )
             print(f"Number of training examples for task {task}-{task_name}: {len(train_data_loader.dataset)}")
 
-            num_training_steps = num_epochs * len(train_data_loader)
-            progress_bar = tqdm(range(num_training_steps))
-
-            model.train()
-            model.config.use_cache = False
-            for epoch in range(num_epochs):
-                epoch_loss = 0.0
-
-                count = 0
-                for batch in train_data_loader:
-                    batch = {k: v.to(device) for k, v in batch.items()}
-
-                    outputs = model(**batch)
-                    loss = outputs.loss
-
-                    loss.backward()
-                    optimizer.step()
-                    optimizer.zero_grad(set_to_none=True)
-
-                    epoch_loss += loss.item()
-                    progress_bar.update(1)
-
-                    count += 1
-                    if count == 5:
-                        break
-
-                avg_loss = epoch_loss / len(train_data_loader)
-                print(f"Epoch {epoch + 1}/{num_epochs} - loss: {avg_loss:.4f}")
-
-            # eval mode on validation set of current task
-            print(f"Evaluating model on validation set of task: {task}-{task_name}")
-            val_metrics = evaluate_accuracy(
+            # train on current task
+            train_one_task(
+                model=model,
+                train_data_loader=train_data_loader,
+                config=config,
+                device=device,
+            )
+            
+            # evaluate on all tasks after training on current task
+            evaluate_checkpoint_on_all_tasks(
                 model=model,
                 tokenizer=tokenizer,
-                data_file=task_config["val_file"],
-                task_name=task_name,
-                task_prompt=TASK_PROMPT_MAP.get(task_name, ""),
+                config=config,
+                task_order=task_order,
+                task_prompt_map=TASK_PROMPT_MAP,
                 system_prompt=DEFAULT_SYSTEM_PROMPT,
-                device=device,
-                max_examples=config["experiment"].get("max_eval_examples"),
-                max_new_tokens=16,
-            )
-
-            print(
-                f"Validation accuracy for {task}-{task_name}: "
-                f"{val_metrics['accuracy']:.4f} "
-                f"({val_metrics['correct']}/{val_metrics['total']})"
-            )
-
-            # save eval results
-            save_eval_results(
-                val_metrics=val_metrics,
-                output_dir=config["experiment"]["output_dir"],
-                task=task,
+                step=step,
+                checkpoint_task=task,
                 seed=seed,
-                split_name="val",
+                device=device,
+                split_file_key=config["experiment"].get("eval_split_file_key", "val_file"),
             )
 
             # save model checkpoint
@@ -160,9 +218,12 @@ def main(config_path: str):
             model.save_pretrained(model_save_path)
             tokenizer.save_pretrained(model_save_path)
 
+            # store config
+            with open(f"{model_save_path}/training_config.yaml", "w") as f:
+                yaml.dump(config, f)            
+
             # cleanup resources
-            del train_data_loader
-            del val_metrics
+            del train_data_loader 
 
             gc.collect()
             torch.cuda.empty_cache()
