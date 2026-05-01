@@ -3,6 +3,7 @@ experiment:
   output_dir: outputs/qwen35_08b_cl
   results_dir: results/qwen35_08b_cl
   seed: [33]
+  system_prompt: false
 
 training:
   num_epochs: 1
@@ -13,9 +14,16 @@ training:
   max_length: 512
   gradient_checkpointing: true
 
-evaluation:
+eval_set_evaluation:
+  enabled: true
   max_new_tokens: 128
   max_examples: 10
+
+reference_set_evaluation:
+  enabled: true
+  max_new_tokens: 128
+  max_examples: 10
+  file: data/llm-cl-500/reference.json
 
 model:
   name: Qwen/Qwen3.5-0.8B

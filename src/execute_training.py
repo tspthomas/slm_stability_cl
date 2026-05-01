@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from peft import LoraConfig, get_peft_model, TaskType, PeftModel
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from evaluate import evaluate_accuracy, save_eval_results, evaluate_checkpoint_on_all_tasks
+from evaluate import evaluate_accuracy, evaluate_reference_set, save_eval_results, evaluate_checkpoint_on_all_tasks
 from utils import get_device, set_seed, is_config_lora
 from data import ChatSFTDataset, SFTCollator
 from constants import DEFAULT_SYSTEM_PROMPT, TASK_PROMPT_MAP, TASK_TRACE_SCIENCEQA
@@ -162,6 +162,9 @@ def main(config_path: str):
     device = get_device()
     print(f"Device: {device}")
 
+    use_system_prompt = config["experiment"].get("system_prompt", False)
+    print(f"Using system prompt: {use_system_prompt}")
+
     for seed in seeds:
         print(f"Running experiment with seed: {seed}")
         set_seed(seed)
@@ -188,11 +191,24 @@ def main(config_path: str):
             config=config,
             task_order=task_order,
             system_prompt=DEFAULT_SYSTEM_PROMPT,
+            use_system_prompt=use_system_prompt,
             step=0,
             checkpoint_task="base",
             seed=seed,
             device=device,
             split_file_key=config["experiment"].get("eval_split_file_key", "val_file"),
+        )
+
+        evaluate_reference_set(
+            model=model,
+            tokenizer=tokenizer,
+            config=config,
+            system_prompt=DEFAULT_SYSTEM_PROMPT,
+            use_system_prompt=use_system_prompt,
+            step=0,
+            checkpoint_task="base",
+            seed=seed,
+            device=device,
         )
 
         # optionally wrap with LoRA for parameter-efficient fine-tuning
@@ -237,11 +253,25 @@ def main(config_path: str):
                 config=config,
                 task_order=task_order,
                 system_prompt=DEFAULT_SYSTEM_PROMPT,
+                use_system_prompt=use_system_prompt,
                 step=step,
                 checkpoint_task=task,
                 seed=seed,
                 device=device,
                 split_file_key=config["experiment"].get("eval_split_file_key", "val_file"),
+            )
+            
+            # evaluate reference set after training on current task
+            evaluate_reference_set(
+                model=model,
+                tokenizer=tokenizer,
+                config=config,
+                system_prompt=DEFAULT_SYSTEM_PROMPT,
+                use_system_prompt=use_system_prompt,
+                step=0,
+                checkpoint_task="base",
+                seed=seed,
+                device=device,
             )
 
             # save model checkpoint

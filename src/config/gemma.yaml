@@ -3,6 +3,7 @@ experiment:
   output_dir: outputs/gemma3_1b_cl
   results_dir: results/gemma3_1b_cl
   seed: [33]
+  system_prompt: false
 
 training:
   num_epochs: 1
@@ -13,9 +14,16 @@ training:
   max_length: 512
   gradient_checkpointing: true
 
-evaluation:
+eval_set_evaluation:
+  enabled: true
   max_new_tokens: 128
   max_examples: 10
+
+reference_set_evaluation:
+  enabled: true
+  max_new_tokens: 128
+  max_examples: 10
+  file: data/llm-cl-500/reference.json
 
 model:
   name: google/gemma-3-1b-it

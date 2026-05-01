@@ -2,13 +2,41 @@ experiment:
   name: llama32_1b
   output_dir: outputs/llama32_1b_cl
   results_dir: results/llama32_1b_cl
-  num_epochs: 1
   seed: [33]
+  system_prompt: false
+
+training:
+  num_epochs: 1
+  batch_size: 2
+  max_train_batches: 10
+  gradient_accumulation_steps: 8
+  learning_rate: 5e-5
+  max_length: 512
+  gradient_checkpointing: true
+
+eval_set_evaluation:
+  enabled: true
+  max_new_tokens: 128
+  max_examples: 10
+
+reference_set_evaluation:
+  enabled: true
+  max_new_tokens: 128
+  max_examples: 10
+  file: data/llm-cl-500/reference.json
 
 model:
   name: meta-llama/Llama-3.2-1B-Instruct
   trust_remote_code: true
   torch_dtype: auto
+
+peft:
+  method: lora
+  r: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  bias: none
+  target_modules: all-linear
 
 continual_learning:
   task_order:
