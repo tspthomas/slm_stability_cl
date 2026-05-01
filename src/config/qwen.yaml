@@ -7,7 +7,7 @@ experiment:
 training:
   num_epochs: 1
   batch_size: 1
-  gradient_accumulation_steps: 8
+  gradient_accumulation_steps: 4
   learning_rate: 5e-5
   max_length: 512
   # max_train_batches: 5

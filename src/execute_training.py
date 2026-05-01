@@ -13,8 +13,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from evaluate import evaluate_accuracy, save_eval_results, evaluate_checkpoint_on_all_tasks
 from utils import get_device, set_seed
 from data import ChatSFTDataset, SFTCollator
-from constants import DEFAULT_SYSTEM_PROMPT, TASK_PROMPT_MAP
-
+from constants import DEFAULT_SYSTEM_PROMPT, TASK_PROMPT_MAP, TASK_TRACE_SCIENCEQA
 
 def load_data_loader(task_name: str, data_path: str, tokenizer, shuffle: bool, max_length: int, batch_size: int) -> DataLoader:
     dataset = load_dataset("json", data_files=data_path, split="train")
@@ -22,7 +21,7 @@ def load_data_loader(task_name: str, data_path: str, tokenizer, shuffle: bool, m
     sft_dataset = ChatSFTDataset(
         dataset=dataset,
         tokenizer=tokenizer,
-        task_prompt=TASK_PROMPT_MAP.get(task_name, ""),
+        task_name=task_name,
         system_prompt=DEFAULT_SYSTEM_PROMPT,
         max_length=max_length,
         enable_thinking=False,
@@ -46,7 +45,7 @@ def train_one_task(
     learning_rate = float(config["training"].get("learning_rate", 5e-5))
     weight_decay = float(config["training"].get("weight_decay", 0.0))
     grad_accum_steps = config["training"].get("gradient_accumulation_steps", 1)
-    max_grad_norm = float(config["training"].get("max_grad_norm", 1.0))
+    max_grad_norm = config["training"].get("max_grad_norm", 1.0)
     max_train_batches = config["training"].get("max_train_batches")  # optional debug
 
     model.train()
