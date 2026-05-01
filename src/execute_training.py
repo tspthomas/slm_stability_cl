@@ -269,7 +269,7 @@ def main(config_path: str):
                 system_prompt=DEFAULT_SYSTEM_PROMPT,
                 use_system_prompt=use_system_prompt,
                 step=0,
-                checkpoint_task="base",
+                checkpoint_task=task,
                 seed=seed,
                 device=device,
             )
