@@ -1,0 +1,299 @@
+[
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nBiology teacher notices that Nicholas is not paying attention in the class and asks him to report the number of insects in the laboratory if there are a total of 48 insect legs. What should be Nicholas's answer?\nAnswer:",
+    "answer": "8",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nAlice started saving a penny every day. After how many days he would have saved 4 dimes in total?\nAnswer:",
+    "answer": "40",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nAnna left India in the month of March, stayed in United States for 3 months before returning on the same date in a different month. In which month did he retire?\nAnswer:",
+    "answer": "June",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nThe newly constructed sports stadium is 61 yards in length. Genesis has a measument device that measures only in feet. Find the length reported by Genesis\nAnswer:",
+    "answer": "183",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nEva wants to buy laces for his 26 pair of shoes. Find the total number of laces Eva will have to purchase.\nAnswer:",
+    "answer": "52",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nChristopher observes that there are 4 spiders in his room. Find out the number of total number of spider legs.\nAnswer:",
+    "answer": "32",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nAbigail painted all the outer faces of some identical cuboids. If he painted a total of 60 faces, how many cuboids did he paint?\nAnswer:",
+    "answer": "10",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nWillow played football for 60 minutes and then played baseketball for 60 minutes. For how many hours did he play?\nAnswer:",
+    "answer": "2",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nBiology teacher notices that Noah is not paying attention in the class and asks him to report the number of insects in the laboratory if there are a total of 36 insect legs. What should be Noah's answer?\nAnswer:",
+    "answer": "6",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nIn a car parking lot, Aria observed that there are 68 car wheels. Find out the number of cars in the parking lot.\nAnswer:",
+    "answer": "17",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nAva watched television for 4 hours. For how many minutes did he watch television?\nAnswer:",
+    "answer": "240",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nJoshua wants to buy a pen. The cost of pen is 6 dollars and Joshua has only 5 dollars in his pocket. He borrowed 68 cents from his neighbor. How many more cents Joshua needs now to purchase a pen?\nAnswer:",
+    "answer": "32",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nCaleb visited a rectangular park and noted down the number of 90 \\degree angles. Then he went to a square field and counted the same. Find the sum of two numbers that Caleb counted.\nAnswer:",
+    "answer": "8",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nIn the entire football tournament, coin was tossed 10 times before the start of the match. Out of 10 times, Head came up 3 times. How many times did Tail come up?\nAnswer:",
+    "answer": "7",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nA shopkeeper has 6 complete decks of playing cards and an additional 7 cards. How many cards does he have in total?\nAnswer:",
+    "answer": "319",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nNora paid for his watch in dimes. If the cost of watch was 9 dollars. Find the number of dimes Nora paid.\nAnswer:",
+    "answer": "90",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nGreyson is a doctor, who went to operating theater at 3:20 pm to execute a 4 hr long operation. Greyson's sister came to meet Greyson at 6:35 pm, for how many minutes she had to wait in order to meet Greyson?\nAnswer:",
+    "answer": "45",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nEli drew a line that was 1 m long. Then he realized that it a bit too long. So, he erased 33 cm of it. What is the length of the line(in cm) now?\nAnswer:",
+    "answer": "67",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nAiden takes a power nap of one fourth of an hour to freshen up. For how many minutes does he sleep?\nAnswer:",
+    "answer": "15",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nVictoria tells his son that if there are a total of 20 bird wings in the sky, how many birds should be there?\nAnswer:",
+    "answer": "10",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nHarper and Jack are running a km long race. Harper finished the race when Jack was 152 meters from the start line. How many meters were Harper adn Jack apart?\nAnswer:",
+    "answer": "848",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nAvery visited a rectangular park and noted down the number of 90 \\degree angles. Then he went to a square field and counted the same. Find the sum of two numbers that Avery counted.\nAnswer:",
+    "answer": "8",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nA 8 minutes scene from an hour long movie was cut due to copyright issues. What is the final length of the movie (in minutes)?\nAnswer:",
+    "answer": "52",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nA machine is cutting stem and processing apples. If I see 275 stems after 2 hrs, how many apples have been processed?\nAnswer:",
+    "answer": "275",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nThe newly constructed sports stadium is 80 yards in length. Ivy has a measument device that measures only in feet. Find the length reported by Ivy\nAnswer:",
+    "answer": "240",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nSadie has to paint the inner faces of his room which is in the shape of a cuboid. Sadie painted $3 faces in the morning and left the rest for the evening. How many faces he will have to paint in the evening?\nAnswer:",
+    "answer": "3",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nAll Players in a local soccer club use one washing machine to wash their socks immediately after the match. If total number of socks in the washing machine is 22, then how many people played the match?\nAnswer:",
+    "answer": "11",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nGabriel is prescribed to take diabetes capsules everyday. In the month of July, he forgot to take capsules on 3 days. Find out the count of his capsule intake in July.\nAnswer:",
+    "answer": "28",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nAlice painted all the outer faces of some identical cuboids. If he painted a total of 36 faces, how many cuboids did he paint?\nAnswer:",
+    "answer": "6",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nValentina bought a foot long burger and shared half with his brother. Find the share of each person in inches\nAnswer:",
+    "answer": "6",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nA weightlifter can lift 10 pounds in each of his hands. Find the total weight he can lift at once.\nAnswer:",
+    "answer": "20",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nAt the end of the month, Andrew was checking his expenses of November. He found that he spent a total of 465 dollars on eggs. Given that Andrew consumes equal number of eggs each day, find that number\nAnswer:",
+    "answer": "15",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  },
+  {
+    "prompt": "Solve the following math problem.\nQuestion:\nLucy became headmaster of a school in the month of March. Lucy stayed headmaster for 3 months before retiring in the same year. In which month did Lucy retire?\nAnswer:",
+    "answer": "June",
+    "task_id": "NumGLUE-cm",
+    "task_name": "NumGLUE-cm",
+    "dataset_root": "data/llm-cl-500",
+    "source_file": "NumGLUE-cm/eval.json",
+    "split": "val_dev"
+  }
+]
