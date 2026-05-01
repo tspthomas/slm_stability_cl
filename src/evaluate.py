@@ -1,5 +1,4 @@
 from collections import defaultdict
-import re
 import os
 import csv
 import json

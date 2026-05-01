@@ -2,7 +2,7 @@ experiment:
   name: qwen35_08b
   output_dir: outputs/qwen35_08b_cl
   results_dir: results/qwen35_08b_cl
-  seed: [33]
+  seed: [33, 42, 123]
   system_prompt: false
 
 training:
@@ -16,14 +16,17 @@ training:
 
 eval_set_evaluation:
   enabled: true
-  max_new_tokens: 128
-  max_examples: 10
+  max_new_tokens: 256
+  max_examples: 5
 
 reference_set_evaluation:
   enabled: true
-  max_new_tokens: 128
-  max_examples: 10
+  max_new_tokens: 256
+  max_examples: 5
   file: data/llm-cl-500/reference.json
+
+stability_evaluation:
+  enabled: true
 
 model:
   name: Qwen/Qwen3.5-0.8B
@@ -48,17 +51,17 @@ tasks:
   task_1:
     name: fomc
     train_file: data/llm-cl-500/FOMC/train.json
-    val_file: data/llm-cl-500/FOMC/eval.json
+    val_file: data/llm-cl-500/FOMC/eval_dev.json
     test_file: data/llm-cl-500/FOMC/test.json
 
   task_2:
     name: scienceqa
     train_file: data/llm-cl-500/ScienceQA/train.json
-    val_file: data/llm-cl-500/ScienceQA/eval.json
+    val_file: data/llm-cl-500/ScienceQA/eval_dev.json
     test_file: data/llm-cl-500/ScienceQA/test.json
 
   task_3:
     name: numgluecm
     train_file: data/llm-cl-500/NumGLUE-cm/train.json
-    val_file: data/llm-cl-500/NumGLUE-cm/eval.json
+    val_file: data/llm-cl-500/NumGLUE-cm/eval_dev.json
     test_file: data/llm-cl-500/NumGLUE-cm/test.json

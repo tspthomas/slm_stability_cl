@@ -11,7 +11,8 @@ from torch.utils.data import DataLoader
 from peft import LoraConfig, get_peft_model, TaskType, PeftModel
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-from evaluate import evaluate_accuracy, evaluate_reference_set, save_eval_results, evaluate_checkpoint_on_all_tasks
+from stability import compute_reference_stability_metrics
+from evaluate import evaluate_reference_set, evaluate_checkpoint_on_all_tasks
 from utils import get_device, set_seed, is_config_lora
 from data import ChatSFTDataset, SFTCollator
 from constants import DEFAULT_SYSTEM_PROMPT, TASK_PROMPT_MAP, TASK_TRACE_SCIENCEQA
@@ -211,6 +212,18 @@ def main(config_path: str):
             device=device,
         )
 
+        compute_reference_stability_metrics(
+            model=model,
+            tokenizer=tokenizer,
+            config=config,
+            system_prompt=DEFAULT_SYSTEM_PROMPT,
+            use_system_prompt=use_system_prompt,
+            device=device,
+            seed=seed,
+            step=0,
+            checkpoint_task="base",
+        )
+
         # optionally wrap with LoRA for parameter-efficient fine-tuning
         if is_config_lora(config):
             print("Wrapping model with LoRA for parameter-efficient fine-tuning.")
@@ -272,6 +285,19 @@ def main(config_path: str):
                 checkpoint_task=task,
                 seed=seed,
                 device=device,
+            )
+
+            # compute stability metrics on reference set after training on current task
+            compute_reference_stability_metrics(
+                model=model,
+                tokenizer=tokenizer,
+                config=config,
+                system_prompt=DEFAULT_SYSTEM_PROMPT,
+                use_system_prompt=use_system_prompt,
+                device=device,
+                seed=seed,
+                step=step,
+                checkpoint_task=task,
             )
 
             # save model checkpoint
