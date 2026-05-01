@@ -51,7 +51,8 @@ def split_val_file(
     n_ref = min(n_ref, len(rows))
 
     ref_indices = set(indices[:n_ref])
-    task_id = val_file.parent.name
+    task_id = val_file.parent.name.replace("_", "")
+    task_id = task_id.replace("-", "").lower()
 
     reference_rows = []
     val_dev_rows = []

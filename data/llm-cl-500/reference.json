@@ -2,8 +2,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nKing (1999) shows that, if a long enough interval is given to hit the target, there may be little difference between a price level target and an inflation rate target.\nStance:",
     "answer": "C",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -11,8 +11,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nBut speculators rarely succeed in dislodging an exchange rate that is firmly rooted in compatible policies and cost structures.\nStance:",
     "answer": "C",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -20,8 +20,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nWhich figure of speech is used in this text?\nSandeep's leaving his job? That's old news. He's been planning that for months.\n\nChoices:\nA. chiasmus\nB. oxymoron\n\nAnswer:",
     "answer": "B\nFigures of speech are words or phrases that use language in a nonliteral or unusual way. They can make writing more expressive.\nAnaphora is the repetition of the same word or words at the beginning of several phrases or clauses.\nWe are united. We are powerful. We are winners.\nAntithesis involves contrasting opposing ideas within a parallel grammatical structure.\nI want to help, not to hurt.\nApostrophe is a direct address to an absent person or a nonhuman entity.\nOh, little bird, what makes you sing so beautifully?\nAssonance is the repetition of a vowel sound in a series of nearby words.\nTry to light the fire.\nChiasmus is an expression in which the second half parallels the first but reverses the order of words.\nNever let a fool kiss you or a kiss fool you.\nA euphemism is a polite or indirect expression that is used to de-emphasize an unpleasant topic.\nThe head of Human Resources would never refer to firing people, only to laying them off.\nHyperbole is an obvious exaggeration that is not meant to be taken literally.\nI ate so much that I think I might explode!\nAn oxymoron is a joining of two seemingly contradictory terms.\nSome reviewers are calling this book a new classic.\nA paradox is a statement that might at first appear to be contradictory, but that may in fact contain some truth.\nAlways expect the unexpected.\nUnderstatement involves deliberately representing something as less serious or important than it really is.\nAs you know, it can get a little cold in the Antarctic.The text uses an oxymoron, a joining of two seemingly contradictory terms.\nOld news is a contradiction, because news is recent information.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -29,8 +29,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nDoes this passage describe the weather or the climate?\nKaren lives in a windy place.\n\nHint:\nHint: Weather is what the atmosphere is like at a certain place and time. Climate is the pattern of weather in a certain place.\n\nChoices:\nA. weather\nB. climate\n\nAnswer:",
     "answer": "B\nThe atmosphere is the layer of air that surrounds Earth. Both weather and climate tell you about the atmosphere.\nWeather is what the atmosphere is like at a certain place and time. Weather can change quickly. For example, the temperature outside your house might get higher throughout the day.\nClimate is the pattern of weather in a certain place. For example, summer temperatures in New York are usually higher than winter temperatures.Read the text carefully.\nKaren lives in a windy place.\nThis passage tells you about the usual amount of wind where Karen lives. It does not describe what the weather is like on a particular day. So, this passage describes the climate.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -38,8 +38,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nIn particular, incoming data and anecdotal information indicated that economic activity had appreciably more forward momentum than previously perceived and that inflation pressures could be intensifying.\nStance:",
     "answer": "B",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -47,8 +47,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nSuppose Maria decides to go as a ghost. Which result would be a cost?\n\nHint:\nMaria is deciding whether to go as a ghost or a superhero to a costume party. She would rather go as a ghost. But she already has a superhero costume.\n\nChoices:\nA. Maria will get to wear the costume she is more excited about.\nB. Maria will spend some time and money to get the costume.\n\nAnswer:",
     "answer": "B\nBefore you decide to do something, it is often helpful to list costs and benefits.\nCosts are what you give up or spend when you decide to do something. Costs involve giving up things that you want or need.\nBenefits are what you gain or save when you decide to do something. Benefits involve gaining something that you want or need.This result is a cost. It involves giving up or spending something that Maria wants or needs:\nMaria will spend some time and money to get the costume.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -56,8 +56,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nWhat kind of sentence is this?\nTori gave me flowers for no reason.\n\nChoices:\nA. exclamatory\nB. declarative\n\nAnswer:",
     "answer": "B\nThere are four kinds of sentences.\nA declarative sentence is a statement. It tells about something. A declarative sentence always ends with a period.\nI have an older brother and a younger sister.\nAn interrogative sentence is a question. It asks something. An interrogative sentence always ends with a question mark.\nHow tall are you?\nAn imperative sentence is a command. It makes a request or tells someone to do something. An imperative sentence usually ends with a period. If the command shows strong feeling, it ends with an exclamation point.\nRead the first chapter by next week.\nLook out for that car!\nAn exclamatory sentence is like a statement, but it shows surprise or strong feeling. An exclamatory sentence always ends with an exclamation point.\nSome whales are over ninety feet long!\nI can't wait until tomorrow!The sentence tells about something, and it ends with a period. It is a declarative sentence.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -65,8 +65,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nWhat kind of sentence is this?\nDon't overlook Allie when choosing the new principal.\n\nChoices:\nA. imperative\nB. exclamatory\nC. interrogative\n\nAnswer:",
     "answer": "A\nThere are four kinds of sentences.\nA declarative sentence is a statement, and it always ends with a period.\nThe nurse told Mr. Abrams to roll up his sleeve so that she could check his blood pressure.\nAn interrogative sentence is a question, and it always ends with a question mark.\nDo you have any plans for the upcoming weekend?\nAn imperative sentence is a command. It makes a request or tells someone to do something, and it usually ends with a period. If the command shows strong feeling, it ends with an exclamation point.\nFor this assignment, use references to support your claims.\nDon't drive so quickly in the construction zone!\nAn exclamatory sentence is like a statement, but it shows surprise or strong feeling. An exclamatory sentence always ends with an exclamation point.\nI can't wait to travel through Europe this summer!The sentence makes a request, so it is an imperative sentence. Here, it ends with a period.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -74,8 +74,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nWhich would smell the most?\n\nChoices:\nA. gold bracelet\nB. metal trombone\nC. soap bar\n\nAnswer:",
     "answer": "C\nEvery object is made of one or more materials. A material is a type of matter. Wood, glass, metal, and plastic are common materials.\nA material has different properties. A material's properties tell you how it looks, feels, tastes, or smells. Some examples of properties are shiny, hard, fragile, and stretchy.\nFor example, a shiny material reflects a lot of light. A fragile material breaks when you drop it.Smelly is a property. A smelly material has a strong smell.\nLook at each picture, one at a time. Imagine smelling the material shown in each picture.\nOf the choices, the soap bar would smell the most. A bar of soap has a strong smell.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -83,8 +83,8 @@
   {
     "prompt": "Solve the following math problem.\nQuestion:\nGenesis has a wall clock in his home that rings every 3 hours. If it will first ring at 1 A.M, how many times will it ring in a day?\nAnswer:",
     "answer": "8",
-    "task_id": "NumGLUE-cm",
-    "task_name": "NumGLUE-cm",
+    "task_id": "numgluecm",
+    "task_name": "numgluecm",
     "dataset_root": "data/llm-cl-500",
     "source_file": "NumGLUE-cm/eval.json",
     "split": "reference"
@@ -92,8 +92,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nSelect the mixture.\n\nChoices:\nA. silver\nB. crayons\n\nAnswer:",
     "answer": "B\nA pure substance is made of only one type of matter.\nA mixture is made of two or more types of matter mixed together.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -101,8 +101,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nIs this a sentence fragment?\nThe Zion Narrows, a canyon in Utah's Zion National Park, stretching for sixteen miles and, in some areas, narrowing to just twenty feet.\n\nChoices:\nA. yes\nB. no\n\nAnswer:",
     "answer": "A\nA sentence is a group of words that expresses a complete thought.\nThe band I'm in has been rehearsing daily because we have a concert in two weeks.\nA sentence fragment is a group of words that does not express a complete thought.\nRehearsing daily because we have a concert in two weeks.\nThis fragment is missing a subject. It doesn't tell who is rehearsing.\nThe band I'm in.\nThis fragment is missing a verb. It doesn't tell what the band I'm in is doing.\nBecause we have a concert in two weeks.\nThis fragment is missing an independent clause. It doesn't tell what happened because of the concert.This is a sentence fragment. It does not express a complete thought.\nThe Zion Narrows, a canyon in Utah's Zion National Park, stretching for sixteen miles and, in some areas, narrowing to just twenty feet.\nHere is one way to fix the sentence fragment:\nThe Zion Narrows, a canyon in Utah's Zion National Park, stretches for sixteen miles and, in some areas, narrows to just twenty feet.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -110,8 +110,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nAs a result, the likely pace and extent of policy easing expected by investors increased, and yields on nominal and inflation-indexed Treasury coupon securities fell.\nStance:",
     "answer": "A",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -119,8 +119,8 @@
   {
     "prompt": "Solve the following math problem.\nQuestion:\nMason wants to buy a gold ring for each of the index fingers of his spouse. If one ring costs 24 dollars. Find the amount Mason will have to pay.\nAnswer:",
     "answer": "48",
-    "task_id": "NumGLUE-cm",
-    "task_name": "NumGLUE-cm",
+    "task_id": "numgluecm",
+    "task_name": "numgluecm",
     "dataset_root": "data/llm-cl-500",
     "source_file": "NumGLUE-cm/eval.json",
     "split": "reference"
@@ -128,8 +128,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nWhich tense does the sentence use?\nAkiko teaches Whitney about customs in Japan.\n\nChoices:\nA. future tense\nB. present tense\nC. past tense\n\nAnswer:",
     "answer": "B\nPresent tense verbs tell you about something that is happening now.\nMost present-tense verbs are regular. They have no ending, or they end in -s or -es.\nTwo verbs are irregular in the present tense, to be and to have. You must remember their forms.\nPast tense verbs tell you about something that has already happened.\nMost past-tense verbs are regular. They end in -ed.\nSome verbs are irregular in the past tense. You must remember their past-tense forms.\nFuture tense verbs tell you about something that is going to happen.\nAll future-tense verbs use the word will.\nPresent | Past | Future\nwalk, walks | walked | will walk\ngo, goes | went | will goThe sentence is in present tense. You can tell because it uses a present-tense verb, teaches. The verb ends in -es and tells you about something that is true or happening now.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -137,8 +137,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nSo let me start with the question pertaining to exchange rates.\nStance:",
     "answer": "C",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -146,8 +146,8 @@
   {
     "prompt": "Solve the following math problem.\nQuestion:\nIn a pond there are 20 frogs and 10 crocodile. Find the total number of animal eyes.\nAnswer:",
     "answer": "60",
-    "task_id": "NumGLUE-cm",
-    "task_name": "NumGLUE-cm",
+    "task_id": "numgluecm",
+    "task_name": "numgluecm",
     "dataset_root": "data/llm-cl-500",
     "source_file": "NumGLUE-cm/eval.json",
     "split": "reference"
@@ -155,8 +155,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nWhat information supports the conclusion that Nolan acquired this trait?\n\nHint:\nRead the description of a trait.\nNolan knows how to fly a kite.\n\nChoices:\nA. Nolan's neighbor taught him how to repair a kite.\nB. Nolan likes to fly a kite with his younger brother.\nC. Nolan's friend taught him how to fly a kite.\n\nAnswer:",
     "answer": "C\nOrganisms, including people, have both inherited and acquired traits. Inherited and acquired traits are gained in different ways.\nInherited traits are passed down from biological parents to their offspring through genes. Genes are pieces of hereditary material that contain the instructions that affect inherited traits. Offspring receive their genes, and therefore gain their inherited traits, from their biological parents. Inherited traits do not need to be learned.\nAcquired traits are gained during a person's life. Some acquired traits, such as riding a bicycle, are gained by learning. Other acquired traits, such as scars, are caused by the environment. Parents do not pass acquired traits down to their offspring.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -164,8 +164,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nFor example, in the mid-1970s, just when the FOMC began to specify money growth targets, econometric estimates of M1 money demand relationships began to break down, predicting faster money growth than was actually observed.\nStance:",
     "answer": "C",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -173,8 +173,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nBut before I return to the prospects for 1998 and the challenges for monetary policy, I will offer a retrospective on 1997.\nStance:",
     "answer": "C",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -182,8 +182,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nWhat information supports the conclusion that Lamar inherited this trait?\n\nHint:\nRead the description of a trait.\nLamar has straight hair.\n\nChoices:\nA. Lamar's parents were born with straight hair. They passed down this trait to Lamar.\nB. Lamar and his father both have short hair.\n\nAnswer:",
     "answer": "A\nOrganisms, including people, have both inherited and acquired traits. Inherited and acquired traits are gained in different ways.\nInherited traits are passed down through families. Children gain these traits from their parents. Inherited traits do not need to be learned.\nAcquired traits are gained during a person's life. Some acquired traits, such as riding a bicycle, are gained by learning. Other acquired traits, such as scars, are caused by the environment.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -191,8 +191,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nLooking beyond this spring, my views on the appropriate pace of interest rate increases and balance sheet reduction for this year and beyond will depend on how the economy evolves.\nStance:",
     "answer": "C",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -200,8 +200,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nWhich greeting is correct for a letter?\n\nChoices:\nA. Dear Samuel,\nB. Dear samuel,\n\nAnswer:",
     "answer": "A\nA letter starts with a greeting and ends with a closing. For each one, capitalize the first word and end with a comma. You should also capitalize proper nouns, such as Aunt Sue.\nDear Aunt Sue,\nI'm glad you could come to my party, and\nthank you for the birthday gift. I could not have\nasked for a better one! Every time I see it, I think\nof you.\nWith love,\nRoryThe second greeting is correct:\nIts first word is capitalized, and it ends with a comma. Samuel is capitalized because it is a proper noun.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -209,8 +209,8 @@
   {
     "prompt": "Solve the following math problem.\nQuestion:\nA group of 5 girls went to a spa for nail polishing. If each girl got all the fingers of both hands and legs polished. Find the total number of fingers the spa staff polished.\nAnswer:",
     "answer": "25",
-    "task_id": "NumGLUE-cm",
-    "task_name": "NumGLUE-cm",
+    "task_id": "numgluecm",
+    "task_name": "numgluecm",
     "dataset_root": "data/llm-cl-500",
     "source_file": "NumGLUE-cm/eval.json",
     "split": "reference"
@@ -218,8 +218,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nHow long does it take to put on your seat belt?\n\nHint:\nSelect the better estimate.\n\nChoices:\nA. 5 seconds\nB. 5 minutes\n\nAnswer:",
     "answer": "A\nMeasurements are written with both a number and a unit. The unit comes after the number. The unit shows what the number means.\nImagine being told that the bus leaves in 7. You might be thinking, 7 what? Does the bus leave in 7 minutes? 7 seconds?\nThe number 7 on its own does not give you much information about when the bus is leaving. That is because the units are missing.\nTime is usually measured in units of seconds, minutes, or hours. It takes about 1 second to sneeze and 1 minute to get dressed in the morning. It takes about 1 hour to bake a pie in the oven.\nThere are 60 seconds in 1 minute. So, 1 second is much less than 1 minute.\nThere are 60 minutes in 1 hour. So, 1 minute is much less than 1 hour.The better estimate for how long it takes to put on your seat belt is 5 seconds.\n5 minutes is too slow.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -227,8 +227,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nWhich is a compound sentence?\n\nChoices:\nA. The barber and his brother opened their shop in Harlem more than thirty years ago.\nB. Elena and her brother rummaged through the boxes in the attic, but they couldn't find their father's childhood baseball glove.\n\nAnswer:",
     "answer": "B\nA clause is a group of words that contains both a subject and a predicate.\nAn independent clause is a complete thought. It can stand alone as a sentence. A dependent clause is not a complete thought. It cannot stand alone as a sentence.\nthe oranges on our tree are ripe\nThe clause can stand alone. It is independent.\nafter we pick up Kevin from work\nThe clause cannot stand alone. It is dependent.\nA simple sentence is made up of a single independent clause.\nBen and I spent all day relaxing by the pool.\nSome simple sentences have introductory phrases, but the introductory phrase is part of the predicate.\nIn the winter, Ben usually wears his heavy coat.\nBen usually wears his heavy coat in the winter.\nA compound sentence is made up of two independent clauses joined by a coordinating conjunction such as and, but, or, or so.\nWe saw a flash of lightning, and seconds later we heard the rumble of thunder.\nA complex sentence is made up of an independent clause and a dependent clause. The dependent clause usually begins with a subordinating conjunction such as after, although, as, because, before, if, since, unless, until, when, or while.\nIf she ever gets the chance, Terri would love to visit the Egyptian pyramids.The first sentence is the compound sentence. It is made up of two independent clauses joined by the coordinating conjunction but.\nElena and her brother rummaged through the boxes in the attic, but they couldn't find their father's childhood baseball glove.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -236,8 +236,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nIf independence is also defined in terms of assuring the ability and commitment of the central bank to achieve price stability, this commitment can be protected by an explicit price stability mandate from the government.\nStance:",
     "answer": "B",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -245,8 +245,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nWhat is the source of the allusion in the sentence below?\nAlexa entered the bustling, aromatic spice market in Istanbul and said to her travel companion, \"We're not in Kansas anymore.\"\n\nChoices:\nA. a movie\nB. a fable\n\nAnswer:",
     "answer": "A\nAn allusion is a brief mention of something or someone well known, often from mythology, history, or literature. An allusion lets you reference ideas from an entire story in just a few words.\n\"I'd better get home before I turn into a pumpkin!\" Lila remarked.\nHere, Lila alludes to the fairy tale \"Cinderella,\" in which Cinderella must leave the ball before the coach that brought her transforms into a pumpkin. The allusion shows that Lila must depart immediately.The source of the allusion We're not in Kansas anymore is a movie.\nIn the 1939 film The Wizard of Oz, Dorothy, a young farm girl from Kansas, finds herself in Oz, an unusual place that looks nothing like her home. She says to her dog, \"Toto, I've a feeling we're not in Kansas anymore.\"\nThe allusion We're not in Kansas anymore means we're in an unfamiliar place.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -254,8 +254,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nHow long is a road from one end of a city to the other?\n\nHint:\nSelect the better estimate.\n\nChoices:\nA. 9 centimeters\nB. 9 kilometers\n\nAnswer:",
     "answer": "B\nMeasurements are written with both a number and a unit. The unit comes after the number. The unit shows what the number means.\nImagine being told that a pencil is 16 long. You might be thinking, 16 what? Is the pencil 16 centimeters long? 16 meters? 16 kilometers?\nThe number 16 on its own does not give you much information about the length of the pencil. That is because the units are missing.\nNow look at the drawing of the pencil and the ruler. The ruler shows that the units are centimeters. So, the length of the pencil is 16 centimeters.\nThere are 100 centimeters in 1 meter. So, 1 centimeter is much shorter than 1 meter.\nThere are 1,000 meters in 1 kilometer. So, 1 meter is much shorter than 1 kilometer.The better estimate for the length of a road from one end of a city to the other is 9 kilometers.\n9 centimeters is too short.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -263,8 +263,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nSelect the one true statement.\n\nChoices:\nA. Mitochondria are outside the nucleus of a plant cell.\nB. The cell membrane breaks down sugar to release energy that a plant cell can use.\nC. Lysosomes contain the master plan for all cell activities and cell development in animal cells.\n\nAnswer:",
     "answer": "A\n",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -272,8 +272,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nBut, as a consequence of low interest rates, the servicing requirement for that debt relative to homeowners' income is roughly in line with the historical average.\nStance:",
     "answer": "A",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -281,8 +281,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nFurther out, TIPS-based inflation compensation 5 to 10 years ahead edged down slightly on net.\nStance:",
     "answer": "A",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -290,8 +290,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nHow long does it take to make a paper airplane?\n\nHint:\nSelect the better estimate.\n\nChoices:\nA. 45 seconds\nB. 45 hours\n\nAnswer:",
     "answer": "A\nMeasurements are written with both a number and a unit. The unit comes after the number. The unit shows what the number means.\nImagine being told that the bus leaves in 7. You might be thinking, 7 what? Does the bus leave in 7 minutes? 7 seconds?\nThe number 7 on its own does not give you much information about when the bus is leaving. That is because the units are missing.\nTime is usually measured in units of seconds, minutes, or hours. It takes about 1 second to sneeze and 1 minute to get dressed in the morning. It takes about 1 hour to bake a pie in the oven.\nThere are 60 seconds in 1 minute. So, 1 second is much less than 1 minute.\nThere are 60 minutes in 1 hour. So, 1 minute is much less than 1 hour.The better estimate for how long it takes to make a paper airplane is 45 seconds.\n45 hours is too slow.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -299,8 +299,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nIs the following trait inherited or acquired?\nCara has naturally brown hair.\n\nChoices:\nA. inherited\nB. acquired\n\nAnswer:",
     "answer": "A\nOrganisms, including people, have both inherited and acquired traits. Inherited and acquired traits are gained in different ways.\nInherited traits are passed down through families. Children gain these traits from their parents. Inherited traits do not need to be learned.\nAcquired traits are gained during a person's life. Some acquired traits, such as riding a bicycle, are gained by learning. Other acquired traits, such as scars, are caused by the environment. Children do not inherit their parents' acquired traits.Humans do not choose their natural hair color. Some people dye their hair. But this does not change their natural hair color.\nChildren get their natural hair color from their parents. So, Cara's hair color is an inherited trait.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -308,8 +308,8 @@
   {
     "prompt": "Choose an answer for the following question and give your reasons.\n\nQuestion:\nWhich figure of speech is used in this text?\nI don't think we'll be able to go hiking with you this weekend; we have an endless list of chores and errands to do!\n\nChoices:\nA. paradox\nB. hyperbole\n\nAnswer:",
     "answer": "B\nFigures of speech are words or phrases that use language in a nonliteral or unusual way. They can make writing more expressive.\nAnaphora is the repetition of the same word or words at the beginning of several phrases or clauses.\nWe are united. We are powerful. We are winners.\nAntithesis involves contrasting opposing ideas within a parallel grammatical structure.\nI want to help, not to hurt.\nApostrophe is a direct address to an absent person or a nonhuman entity.\nOh, little bird, what makes you sing so beautifully?\nAssonance is the repetition of a vowel sound in a series of nearby words.\nTry to light the fire.\nChiasmus is an expression in which the second half parallels the first but reverses the order of words.\nNever let a fool kiss you or a kiss fool you.\nA euphemism is a polite or indirect expression that is used to de-emphasize an unpleasant topic.\nThe head of Human Resources would never refer to firing people, only to laying them off.\nHyperbole is an obvious exaggeration that is not meant to be taken literally.\nI ate so much that I think I might explode!\nAn oxymoron is a joining of two seemingly contradictory terms.\nSome reviewers are calling this book a new classic.\nA paradox is a statement that might at first appear to be contradictory, but that may in fact contain some truth.\nAlways expect the unexpected.\nUnderstatement involves deliberately representing something as less serious or important than it really is.\nAs you know, it can get a little cold in the Antarctic.The text uses hyperbole, an obvious exaggeration that is not meant to be taken literally.\nEndless list is an exaggeration, since it is unlikely that their list of chores actually goes on forever.",
-    "task_id": "ScienceQA",
-    "task_name": "ScienceQA",
+    "task_id": "scienceqa",
+    "task_name": "scienceqa",
     "dataset_root": "data/llm-cl-500",
     "source_file": "ScienceQA/eval.json",
     "split": "reference"
@@ -317,8 +317,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nMoreover, economic theory indicates that the equilibrium level of short-term real interest rates would likely remain low relative to estimates of its level before the financial crisis if trend growth of total factor productivity does not pick up and if demographic projections for slow growth in working-age populations are borne out.\nStance:",
     "answer": "A",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -326,8 +326,8 @@
   {
     "prompt": "Solve the following math problem.\nQuestion:\nThe newly constructed sports stadium is 62 yards in length. Addison has a measument device that measures only in feet. Find the length reported by Addison\nAnswer:",
     "answer": "186",
-    "task_id": "NumGLUE-cm",
-    "task_name": "NumGLUE-cm",
+    "task_id": "numgluecm",
+    "task_name": "numgluecm",
     "dataset_root": "data/llm-cl-500",
     "source_file": "NumGLUE-cm/eval.json",
     "split": "reference"
@@ -335,8 +335,8 @@
   {
     "prompt": "Solve the following math problem.\nQuestion:\nFor an entire month of March, Josiah purchased 2 cookies each day. If each cookie costs 16 dollars. How much did Josiah spend on cookies in March\nAnswer:",
     "answer": "992",
-    "task_id": "NumGLUE-cm",
-    "task_name": "NumGLUE-cm",
+    "task_id": "numgluecm",
+    "task_name": "numgluecm",
     "dataset_root": "data/llm-cl-500",
     "source_file": "NumGLUE-cm/eval.json",
     "split": "reference"
@@ -344,8 +344,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nWell, we—as a Committee, we do not desire inflation undershoots.\nStance:",
     "answer": "A",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -353,8 +353,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nAnd what is the risk that, in taking such steps, a central bank would be seen by investors as taking on partial responsibility for asset prices?\nStance:",
     "answer": "C",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -362,8 +362,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nFor example, the evidence suggests that changes in the demographic composition of the labor force affect NAIRU and it is also likely that government programs, including unemployment compensation and welfare, also affect NAIRU.\nStance:",
     "answer": "C",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -371,8 +371,8 @@
   {
     "prompt": "Solve the following math problem.\nQuestion:\nNolan decided to save 3k dollars every month for an entire year. Calculate the amount of money Nolan would have saved at the end of the year\nAnswer:",
     "answer": "36",
-    "task_id": "NumGLUE-cm",
-    "task_name": "NumGLUE-cm",
+    "task_id": "numgluecm",
+    "task_name": "numgluecm",
     "dataset_root": "data/llm-cl-500",
     "source_file": "NumGLUE-cm/eval.json",
     "split": "reference"
@@ -380,8 +380,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nAs always, my colleagues on the FOMC and I will act to foster our dual objectives of price stability and sustainable economic growth.\nStance:",
     "answer": "B",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -389,8 +389,8 @@
   {
     "prompt": "Solve the following math problem.\nQuestion:\nJames goes to school at 12 pm. On Tuesday, James's classes are in the following order : Maths, History, Geography, Science and Music. Just now James's Science class got over. Can you estimate the time now in pm?\nAnswer:",
     "answer": "4",
-    "task_id": "NumGLUE-cm",
-    "task_name": "NumGLUE-cm",
+    "task_id": "numgluecm",
+    "task_name": "numgluecm",
     "dataset_root": "data/llm-cl-500",
     "source_file": "NumGLUE-cm/eval.json",
     "split": "reference"
@@ -398,8 +398,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nIn addition, coming to grips now with the outsized projected growth in entitlement spending in the early years of the next century could have a profound effect on current expectations of stability.\nStance:",
     "answer": "B",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -407,8 +407,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nCredit conditions in the commercial real estate (CRE) sector continued to ease, and growth in CRE loans at banks stayed solid.\nStance:",
     "answer": "B",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -416,8 +416,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nIn addition, to address the sizable demand for dollar funding in foreign jurisdictions, the FOMC authorized the expansion of its existing swap lines with the European Central Bank and Swiss National Bank; by the end of the intermeeting period, the formal quantity limits on these lines had been eliminated.\nStance:",
     "answer": "A",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
@@ -425,8 +425,8 @@
   {
     "prompt": "What is the monetary policy stance for the following text? A. dovish, B. hawkish, C. neutral. Choose one from A, B and C.\nText:\nTreasury yields rose sharply on its release as market participants traced out the report's presumed implications for monetary policy.\nStance:",
     "answer": "B",
-    "task_id": "FOMC",
-    "task_name": "FOMC",
+    "task_id": "fomc",
+    "task_name": "fomc",
     "dataset_root": "data/llm-cl-500",
     "source_file": "FOMC/eval.json",
     "split": "reference"
