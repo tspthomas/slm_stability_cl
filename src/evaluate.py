@@ -189,7 +189,12 @@ def generate_answer(
         )
 
     generated_ids = outputs[0][inputs["input_ids"].shape[-1]:]
-    return tokenizer.decode(generated_ids, skip_special_tokens=False).strip()
+    text = tokenizer.decode(generated_ids, skip_special_tokens=False).strip()
+
+    ended_with_eos = tokenizer.eos_token_id in generated_ids
+    hit_max_tokens = len(generated_ids) >= max_new_tokens and not ended_with_eos
+
+    return text, hit_max_tokens
 
 
 def evaluate_accuracy(
@@ -219,7 +224,7 @@ def evaluate_accuracy(
     for example in tqdm(dataset, desc=f"Evaluating {task_name}"):
         gold = normalize_answer(example["answer"], task_name)
 
-        prediction_text = generate_answer(
+        prediction_text, hit_max_tokens = generate_answer(
             model=model,
             tokenizer=tokenizer,
             example=example,
@@ -243,6 +248,7 @@ def evaluate_accuracy(
                 "gold": gold,
                 "prediction": pred,
                 "raw_prediction": prediction_text,
+                "hit_max_tokens": hit_max_tokens,
                 "correct": is_correct,
             }
         )
