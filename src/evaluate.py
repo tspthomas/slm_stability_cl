@@ -1,16 +1,108 @@
-from collections import defaultdict
-import os
 import csv
 import json
+import os
+from collections import defaultdict
+from typing import Any, Dict, List
+
 import torch
-
-from typing import Dict, Any, List
 from datasets import load_dataset
-
 from tqdm.auto import tqdm
 
 from data import build_messages, get_task_prompt
 from utils import normalize_answer
+
+
+def batch_iter(dataset, batch_size: int):
+    for start in range(0, len(dataset), batch_size):
+        end = min(start + batch_size, len(dataset))
+        yield [dataset[i] for i in range(start, end)]
+
+
+def _eos_found(generated_ids, eos_token_id) -> bool:
+    if eos_token_id is None:
+        return False
+
+    if isinstance(eos_token_id, list):
+        return any((generated_ids == eos_id).any().item() for eos_id in eos_token_id)
+
+    return (generated_ids == eos_token_id).any().item()
+
+
+def build_generation_text(
+    tokenizer,
+    example: Dict[str, Any],
+    task_prompt: str,
+    system_prompt: str,
+    use_system_prompt: bool,
+    enable_thinking: bool = False,
+) -> str:
+    messages = build_messages(
+        prompt=example["prompt"],
+        task_prompt=task_prompt,
+        system_prompt=system_prompt,
+        use_system_prompt=use_system_prompt,
+    )
+
+    return tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True,
+        enable_thinking=enable_thinking,
+    )
+
+
+def generate_batch_from_texts(
+    model,
+    tokenizer,
+    texts: List[str],
+    device,
+    max_new_tokens: int,
+) -> List[tuple[str, bool]]:
+    """
+    Batched generation from already-rendered chat-template strings.
+
+    Returns:
+        List of (decoded_text, hit_max_tokens)
+    """
+    old_padding_side = tokenizer.padding_side
+    tokenizer.padding_side = "left"
+
+    inputs = tokenizer(
+        texts,
+        return_tensors="pt",
+        padding=True,
+        add_special_tokens=False,
+    ).to(device)
+
+    tokenizer.padding_side = old_padding_side
+
+    prompt_length = inputs["input_ids"].shape[1]
+
+    with torch.inference_mode():
+        outputs = model.generate(
+            **inputs,
+            max_new_tokens=max_new_tokens,
+            do_sample=False,
+            use_cache=True,
+            pad_token_id=tokenizer.pad_token_id,
+            eos_token_id=tokenizer.eos_token_id,
+        )
+
+    generated_batch = outputs[:, prompt_length:]
+
+    results = []
+    for generated_ids in generated_batch:
+        text = tokenizer.decode(
+            generated_ids,
+            skip_special_tokens=False,
+        ).strip()
+
+        ended_with_eos = _eos_found(generated_ids, tokenizer.eos_token_id)
+        hit_max_tokens = len(generated_ids) >= max_new_tokens and not ended_with_eos
+
+        results.append((text, hit_max_tokens))
+
+    return results
 
 
 def save_eval_results(
@@ -30,9 +122,7 @@ def save_eval_results(
         for row in val_metrics.get("examples", []):
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
-    metrics_without_examples = {
-        k: v for k, v in val_metrics.items() if k != "examples"
-    }
+    metrics_without_examples = {k: v for k, v in val_metrics.items() if k != "examples"}
 
     with open(metrics_path, "w", encoding="utf-8") as f:
         json.dump(metrics_without_examples, f, indent=2, ensure_ascii=False)
@@ -85,8 +175,10 @@ def evaluate_checkpoint_on_all_tasks(
     split_file_key: str = "val_file",
 ):
     if not config.get("eval_set_evaluation", {}).get("enabled", False):
-        print("Skipping evaluation on main validation sets as eval_set_evaluation is disabled in config.")
-        return None 
+        print(
+            "Skipping evaluation on main validation sets as eval_set_evaluation is disabled in config."
+        )
+        return None
 
     rows = []
 
@@ -187,7 +279,7 @@ def generate_answer(
             eos_token_id=tokenizer.eos_token_id,
         )
 
-    generated_ids = outputs[0][inputs["input_ids"].shape[-1]:]
+    generated_ids = outputs[0][inputs["input_ids"].shape[-1] :]
     text = tokenizer.decode(generated_ids, skip_special_tokens=False).strip()
 
     ended_with_eos = tokenizer.eos_token_id in generated_ids
@@ -207,6 +299,7 @@ def evaluate_accuracy(
     device,
     max_examples: int | None = None,
     max_new_tokens: int = 256,
+    batch_size: int = 4,
 ) -> Dict[str, Any]:
     dataset = load_dataset("json", data_files=data_file, split="train")
 
@@ -215,42 +308,57 @@ def evaluate_accuracy(
         dataset = dataset.select(range(min(max_examples, len(dataset))))
 
     model.eval()
+    model.config.use_cache = True
 
     correct = 0
     total = 0
     rows: List[Dict[str, Any]] = []
 
-    for example in tqdm(dataset, desc=f"Evaluating {task_name}"):
-        gold = normalize_answer(example["answer"], task_name)
+    num_batches = (len(dataset) + batch_size - 1) // batch_size
 
-        prediction_text, hit_max_tokens = generate_answer(
+    for examples in tqdm(
+        batch_iter(dataset, batch_size),
+        total=num_batches,
+        desc=f"Evaluating {task_name}",
+    ):
+        texts = [
+            build_generation_text(
+                tokenizer=tokenizer,
+                example=example,
+                task_prompt=task_prompt,
+                system_prompt=system_prompt,
+                use_system_prompt=use_system_prompt,
+                enable_thinking=False,
+            )
+            for example in examples
+        ]
+
+        predictions = generate_batch_from_texts(
             model=model,
             tokenizer=tokenizer,
-            example=example,
-            task_prompt=task_prompt,
-            system_prompt=system_prompt,
-            use_system_prompt=use_system_prompt,
+            texts=texts,
             device=device,
             max_new_tokens=max_new_tokens,
-            enable_thinking=False,
         )
 
-        pred = normalize_answer(prediction_text, task_name)
+        for example, (prediction_text, hit_max_tokens) in zip(examples, predictions):
+            gold = normalize_answer(example["answer"], task_name)
+            pred = normalize_answer(prediction_text, task_name)
 
-        is_correct = pred == gold
-        correct += int(is_correct)
-        total += 1
+            is_correct = pred == gold
+            correct += int(is_correct)
+            total += 1
 
-        rows.append(
-            {
-                "prompt": example["prompt"],
-                "gold": gold,
-                "prediction": pred,
-                "raw_prediction": prediction_text,
-                "hit_max_tokens": hit_max_tokens,
-                "correct": is_correct,
-            }
-        )
+            rows.append(
+                {
+                    "prompt": example["prompt"],
+                    "gold": gold,
+                    "prediction": pred,
+                    "raw_prediction": prediction_text,
+                    "hit_max_tokens": hit_max_tokens,
+                    "correct": is_correct,
+                }
+            )
 
     accuracy = correct / total if total > 0 else 0.0
 
@@ -295,6 +403,7 @@ def _evaluate_reference_set(
         dataset = dataset.select(range(min(max_examples, len(dataset))))
 
     max_new_tokens = config["reference_set_evaluation"].get("max_new_tokens", 16)
+    batch_size = config["reference_set_evaluation"].get("batch_size", 4)
 
     model.eval()
     model.config.use_cache = True
@@ -305,46 +414,67 @@ def _evaluate_reference_set(
 
     per_task = defaultdict(lambda: {"correct": 0, "total": 0})
 
-    for example in tqdm(dataset, desc=f"Reference eval step={step}"):
-        task_name = resolve_reference_task_name(example, config)
-        task_prompt = get_task_prompt(task_name)
+    num_batches = (len(dataset) + batch_size - 1) // batch_size
 
-        gold = normalize_answer(example["answer"], task_name)
+    for examples in tqdm(
+        batch_iter(dataset, batch_size),
+        total=num_batches,
+        desc=f"Reference eval step={step}",
+    ):
+        task_names = [
+            resolve_reference_task_name(example, config) for example in examples
+        ]
 
-        raw_prediction = generate_answer(
+        texts = [
+            build_generation_text(
+                tokenizer=tokenizer,
+                example=example,
+                task_prompt=get_task_prompt(task_name),
+                system_prompt=system_prompt,
+                use_system_prompt=use_system_prompt,
+                enable_thinking=False,
+            )
+            for example, task_name in zip(examples, task_names)
+        ]
+
+        predictions = generate_batch_from_texts(
             model=model,
             tokenizer=tokenizer,
-            example=example,
-            task_prompt=task_prompt,
-            system_prompt=system_prompt,
-            use_system_prompt=use_system_prompt,
+            texts=texts,
             device=device,
             max_new_tokens=max_new_tokens,
-            enable_thinking=False,
         )
 
-        pred = normalize_answer(raw_prediction, task_name)
-        is_correct = pred == gold
+        for example, task_name, (prediction_text, hit_max_tokens) in zip(
+            examples,
+            task_names,
+            predictions,
+        ):
+            gold = normalize_answer(example["answer"], task_name)
+            pred = normalize_answer(prediction_text, task_name)
 
-        correct += int(is_correct)
-        total += 1
+            is_correct = pred == gold
 
-        per_task[task_name]["correct"] += int(is_correct)
-        per_task[task_name]["total"] += 1
+            correct += int(is_correct)
+            total += 1
 
-        rows.append(
-            {
-                "seed": seed,
-                "step": step,
-                "checkpoint_task": checkpoint_task,
-                "task_name": task_name,
-                "prompt": example["prompt"],
-                "gold": gold,
-                "prediction": pred,
-                "raw_prediction": raw_prediction,
-                "correct": is_correct,
-            }
-        )
+            per_task[task_name]["correct"] += int(is_correct)
+            per_task[task_name]["total"] += 1
+
+            rows.append(
+                {
+                    "seed": seed,
+                    "step": step,
+                    "checkpoint_task": checkpoint_task,
+                    "task_name": task_name,
+                    "prompt": example["prompt"],
+                    "gold": gold,
+                    "prediction": pred,
+                    "raw_prediction": prediction_text,
+                    "hit_max_tokens": hit_max_tokens,
+                    "correct": is_correct,
+                }
+            )
 
     accuracy = correct / total if total > 0 else 0.0
 
@@ -441,7 +571,9 @@ def evaluate_reference_set(
     device,
 ):
     if not config.get("reference_set_evaluation", {}).get("enabled", False):
-        print("Skipping evaluation on reference set as reference_set_evaluation is disabled in config.")
+        print(
+            "Skipping evaluation on reference set as reference_set_evaluation is disabled in config."
+        )
         return None
 
     print(f"Evaluating reference set at step={step}, checkpoint={checkpoint_task}")

@@ -17,12 +17,14 @@ training:
 eval_set_evaluation:
   enabled: true
   max_new_tokens: 256
-  max_examples: 5
+  batch_size: 4
+  #max_examples: 5
 
 reference_set_evaluation:
   enabled: true
   max_new_tokens: 256
-  max_examples: 5
+  batch_size: 4
+  #max_examples: 5
   file: data/llm-cl-500/reference.json
 
 stability_evaluation:

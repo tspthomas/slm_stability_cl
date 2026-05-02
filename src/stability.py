@@ -1,13 +1,18 @@
-import os
+"""
+This module implements the stability evaluation logic.
+"""
+
 import csv
-import math
 import json
-from typing import Dict, Any, List, Tuple
+import math
+import os
+from typing import Any, Dict, List, Tuple
 
 import torch
 import torch.nn.functional as F
 from datasets import load_dataset
 from tqdm.auto import tqdm
+
 from data import build_messages, get_task_prompt
 
 
@@ -47,7 +52,9 @@ def build_prompt_texts(
     return texts
 
 
-def get_next_token_log_probs(model, tokenizer, texts: List[str], device, max_length: int):
+def get_next_token_log_probs(
+    model, tokenizer, texts: List[str], device, max_length: int
+):
     old_padding_side = tokenizer.padding_side
     tokenizer.padding_side = "left"
 

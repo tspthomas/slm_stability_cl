@@ -17,13 +17,18 @@ training:
 eval_set_evaluation:
   enabled: true
   max_new_tokens: 128
+  batch_size: 4
   #max_examples: 10
 
 reference_set_evaluation:
   enabled: true
   max_new_tokens: 128
+  batch_size: 4
   #max_examples: 10
   file: data/llm-cl-500/reference.json
+
+stability_evaluation:
+  enabled: true
 
 model:
   name: google/gemma-3-1b-it
