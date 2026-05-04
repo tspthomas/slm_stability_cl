@@ -1,0 +1,76 @@
+experiment:
+  name: qwen35_08b_paper_321
+  output_dir: outputs/qwen35_08b_paper_321
+  results_dir: results/qwen35_08b_paper_321
+  seed: [33, 42, 123]
+  system_prompt: false
+
+generation:
+  temperature: 0.0
+  top_p: 1.0
+  do_sample: false
+  use_cache: true # only used in eval
+
+training:
+  num_epochs: 1
+  batch_size: 2
+  gradient_accumulation_steps: 8
+  learning_rate: 5e-5
+  max_length: 512
+  gradient_checkpointing: true
+  # max_train_batches: 5
+
+eval_set_evaluation:
+  enabled: true
+  max_new_tokens: 256
+  batch_size: 4
+  split_file_key: test_file
+  # max_examples: 5
+
+reference_set_evaluation:
+  enabled: true
+  max_new_tokens: 256
+  batch_size: 4
+  file: data/llm-cl-500/reference.json
+  # max_examples: 5
+
+stability_evaluation:
+  enabled: true
+
+model:
+  name: Qwen/Qwen3.5-0.8B
+  trust_remote_code: true
+  torch_dtype: auto
+
+peft:
+  method: lora
+  r: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  bias: none
+  target_modules: all-linear
+
+continual_learning:
+  task_order:
+    - task_3
+    - task_2
+    - task_1
+
+tasks:
+  task_1:
+    name: fomc
+    train_file: data/llm-cl-500/FOMC/train.json
+    val_file: data/llm-cl-500/FOMC/eval_dev.json
+    test_file: data/llm-cl-500/FOMC/test.json
+
+  task_2:
+    name: scienceqa
+    train_file: data/llm-cl-500/ScienceQA/train.json
+    val_file: data/llm-cl-500/ScienceQA/eval_dev.json
+    test_file: data/llm-cl-500/ScienceQA/test.json
+
+  task_3:
+    name: numgluecm
+    train_file: data/llm-cl-500/NumGLUE-cm/train.json
+    val_file: data/llm-cl-500/NumGLUE-cm/eval_dev.json
+    test_file: data/llm-cl-500/NumGLUE-cm/test.json

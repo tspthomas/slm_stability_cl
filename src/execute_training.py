@@ -91,7 +91,6 @@ def main(config_path: str):
             checkpoint_task="base",
             seed=seed,
             device=device,
-            split_file_key=config["experiment"].get("eval_split_file_key", "val_file"),
         )
 
         evaluate_reference_set(
@@ -169,9 +168,6 @@ def main(config_path: str):
                 checkpoint_task=task,
                 seed=seed,
                 device=device,
-                split_file_key=config["experiment"].get(
-                    "eval_split_file_key", "val_file"
-                ),
             )
 
             # evaluate reference set after training on current task

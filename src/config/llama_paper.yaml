@@ -1,31 +1,38 @@
 experiment:
-  name: llama32_1b
-  output_dir: outputs/llama32_1b_cl
-  results_dir: results/llama32_1b_cl
+  name: llama32_1b_paper
+  output_dir: outputs/llama32_1b_cl_paper
+  results_dir: results/llama32_1b_cl_paper
   seed: [33, 42, 123]
   system_prompt: false
+
+generation:
+  temperature: 0.0
+  top_p: 1.0
+  do_sample: false
+  use_cache: true # only used in eval
 
 training:
   num_epochs: 1
   batch_size: 2
-  max_train_batches: 10
   gradient_accumulation_steps: 8
   learning_rate: 5e-5
   max_length: 512
   gradient_checkpointing: true
+  # max_train_batches: 10
 
 eval_set_evaluation:
   enabled: true
   max_new_tokens: 256
   batch_size: 4
-  #max_examples: 10
+  split_file_key: test_file
+  # max_examples: 10
 
 reference_set_evaluation:
   enabled: true
   max_new_tokens: 256
   batch_size: 4
-  #max_examples: 10
   file: data/llm-cl-500/reference.json
+  # max_examples: 10
 
 stability_evaluation:
   enabled: true

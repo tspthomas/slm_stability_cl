@@ -60,7 +60,7 @@ def train_one_task(
     weight_decay = float(config["training"].get("weight_decay", 0.0))
     grad_accum_steps = config["training"].get("gradient_accumulation_steps", 1)
     max_grad_norm = config["training"].get("max_grad_norm", 1.0)
-    max_train_batches = config["training"].get("max_train_batches")  # optional debug
+    max_train_batches = config["training"].get("max_train_batches")
 
     model.train()
     model.config.use_cache = False

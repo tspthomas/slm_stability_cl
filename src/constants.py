@@ -9,6 +9,11 @@ DEFAULT_SYSTEM_PROMPT = (
     "Return only the final answer."
 )
 
+GENERATION_TEMPERATURE = 0.0
+GENERATION_TOP_P = 1.0
+GENERATION_DO_SAMPLE = False
+GENERATION_USE_CACHE = True
+
 # QWEN
 # default prompts as per QWEN documentation - https://huggingface.co/Qwen/Qwen3.5-0.8B
 QWEN_MATH_PROMPT = (

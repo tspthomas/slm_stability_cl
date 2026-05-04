@@ -1,6 +1,7 @@
 import torch
-from constants import DEFAULT_SYSTEM_PROMPT, TASK_TRACE_SCIENCEQA, TASK_PROMPT_MAP
 from torch.utils.data import Dataset as TorchDataset
+
+from constants import DEFAULT_SYSTEM_PROMPT, TASK_PROMPT_MAP, TASK_TRACE_SCIENCEQA
 
 
 def _split_answer(example):
@@ -36,7 +37,6 @@ def build_messages(
     messages.append({"role": "user", "content": user_text})
 
     return messages
-
 
 
 class ChatSFTDataset(TorchDataset):
@@ -106,11 +106,25 @@ class ChatSFTDataset(TorchDataset):
             add_special_tokens=False,
         ).input_ids
 
-        labels = [-100] * len(prompt_ids) + input_ids[len(prompt_ids):]
+        # sanity check
+        if input_ids[: len(prompt_ids)] != prompt_ids:
+            raise ValueError(
+                "Prompt tokens are not a prefix of full conversation tokens. "
+                "The chat template may be inconsistent between prompt_text and full_text."
+            )
 
-        if len(input_ids) > self.max_length:
-            input_ids = input_ids[-self.max_length:]
-            labels = labels[-self.max_length:]
+        labels = [-100] * len(prompt_ids) + input_ids[len(prompt_ids) :]
+
+        was_truncated = len(input_ids) > self.max_length
+        if was_truncated:
+            input_ids = input_ids[-self.max_length :]
+            labels = labels[-self.max_length :]
+
+        if all(label == -100 for label in labels):
+            raise ValueError(
+                "All labels are masked after truncation. "
+                "Increase max_length or check the prompt/answer format."
+            )
 
         return {
             "input_ids": torch.tensor(input_ids, dtype=torch.long),
@@ -123,11 +137,21 @@ class SFTCollator:
     def __init__(self, tokenizer):
         self.tokenizer = tokenizer
 
+        self.pad_token_id = self.tokenizer.pad_token_id
+        if self.pad_token_id is None:
+            self.pad_token_id = self.tokenizer.eos_token_id
+
+        if self.pad_token_id is None:
+            raise ValueError(
+                "Tokenizer has neither pad_token_id nor eos_token_id. "
+                "Please define a pad token before training."
+            )
+
     def __call__(self, batch):
         input_ids = torch.nn.utils.rnn.pad_sequence(
             [x["input_ids"] for x in batch],
             batch_first=True,
-            padding_value=self.tokenizer.pad_token_id,
+            padding_value=self.pad_token_id,
         )
 
         labels = torch.nn.utils.rnn.pad_sequence(
@@ -147,4 +171,3 @@ class SFTCollator:
             "labels": labels,
             "attention_mask": attention_mask,
         }
-    

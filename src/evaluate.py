@@ -8,6 +8,12 @@ import torch
 from datasets import load_dataset
 from tqdm.auto import tqdm
 
+from constants import (
+    GENERATION_DO_SAMPLE,
+    GENERATION_TEMPERATURE,
+    GENERATION_TOP_P,
+    GENERATION_USE_CACHE,
+)
 from data import build_messages, get_task_prompt
 from utils import normalize_answer
 
@@ -51,9 +57,79 @@ def build_generation_text(
     )
 
 
+def get_pad_token_id(tokenizer):
+    if tokenizer.pad_token_id is not None:
+        return tokenizer.pad_token_id
+    if tokenizer.eos_token_id is not None:
+        return tokenizer.eos_token_id
+    raise ValueError("Tokenizer has neither pad_token_id nor eos_token_id.")
+
+
+def get_eos_token_ids(tokenizer, model=None):
+    eos_ids = []
+
+    def add_id(x):
+        if x is None:
+            return
+        if isinstance(x, list):
+            for v in x:
+                add_id(v)
+        elif x not in eos_ids:
+            eos_ids.append(x)
+
+    add_id(getattr(tokenizer, "eos_token_id", None))
+
+    if model is not None:
+        add_id(getattr(model.generation_config, "eos_token_id", None))
+
+    for tok in ["<end_of_turn>", "<|im_end|>"]:
+        tok_id = tokenizer.convert_tokens_to_ids(tok)
+        if (
+            tok_id is not None
+            and tok_id != tokenizer.unk_token_id
+            and tok_id not in eos_ids
+        ):
+            eos_ids.append(tok_id)
+
+    return eos_ids if eos_ids else None
+
+
+def trim_after_eos(generated_ids, eos_token_id):
+    if eos_token_id is None:
+        return generated_ids
+
+    eos_ids = eos_token_id if isinstance(eos_token_id, list) else [eos_token_id]
+
+    for idx, token_id in enumerate(generated_ids.tolist()):
+        if token_id in eos_ids:
+            return generated_ids[: idx + 1]
+
+    return generated_ids
+
+
+def build_generation_kwargs(config):
+    generation_cfg = config.get("generation", {})
+    do_sample = generation_cfg.get("do_sample", GENERATION_DO_SAMPLE)
+
+    kwargs = {
+        "do_sample": do_sample,
+        "use_cache": generation_cfg.get("use_cache", GENERATION_USE_CACHE),
+        "num_beams": generation_cfg.get("num_beams", 1),
+    }
+
+    if do_sample:
+        kwargs["temperature"] = generation_cfg.get(
+            "temperature", GENERATION_TEMPERATURE
+        )
+        kwargs["top_p"] = generation_cfg.get("top_p", GENERATION_TOP_P)
+
+    return kwargs
+
+
 def generate_batch_from_texts(
     model,
     tokenizer,
+    config: Dict[str, Any],
     texts: List[str],
     device,
     max_new_tokens: int,
@@ -64,41 +140,50 @@ def generate_batch_from_texts(
     Returns:
         List of (decoded_text, hit_max_tokens)
     """
+    pad_token_id = get_pad_token_id(tokenizer)
+    eos_token_ids = get_eos_token_ids(tokenizer, model)
+
+    if tokenizer.pad_token_id is None and tokenizer.eos_token is not None:
+        tokenizer.pad_token = tokenizer.eos_token
+
     old_padding_side = tokenizer.padding_side
     tokenizer.padding_side = "left"
 
-    inputs = tokenizer(
-        texts,
-        return_tensors="pt",
-        padding=True,
-        add_special_tokens=False,
-    ).to(device)
-
-    tokenizer.padding_side = old_padding_side
+    try:
+        inputs = tokenizer(
+            texts,
+            return_tensors="pt",
+            padding=True,
+            add_special_tokens=False,
+        ).to(device)
+    finally:
+        tokenizer.padding_side = old_padding_side
 
     prompt_length = inputs["input_ids"].shape[1]
+    generation_kwargs = build_generation_kwargs(config)
 
     with torch.inference_mode():
         outputs = model.generate(
             **inputs,
+            **generation_kwargs,
             max_new_tokens=max_new_tokens,
-            do_sample=False,
-            use_cache=True,
-            pad_token_id=tokenizer.pad_token_id,
-            eos_token_id=tokenizer.eos_token_id,
+            pad_token_id=pad_token_id,
+            eos_token_id=eos_token_ids,
         )
 
     generated_batch = outputs[:, prompt_length:]
 
     results = []
     for generated_ids in generated_batch:
+        ended_with_eos = _eos_found(generated_ids, eos_token_ids)
+        hit_max_tokens = len(generated_ids) >= max_new_tokens and not ended_with_eos
+
+        trimmed_ids = trim_after_eos(generated_ids, eos_token_ids)
+
         text = tokenizer.decode(
-            generated_ids,
+            trimmed_ids,
             skip_special_tokens=False,
         ).strip()
-
-        ended_with_eos = _eos_found(generated_ids, tokenizer.eos_token_id)
-        hit_max_tokens = len(generated_ids) >= max_new_tokens and not ended_with_eos
 
         results.append((text, hit_max_tokens))
 
@@ -172,7 +257,6 @@ def evaluate_checkpoint_on_all_tasks(
     checkpoint_task: str,
     seed: int,
     device,
-    split_file_key: str = "val_file",
 ):
     if not config.get("eval_set_evaluation", {}).get("enabled", False):
         print(
@@ -185,13 +269,15 @@ def evaluate_checkpoint_on_all_tasks(
     model.eval()
     model.config.use_cache = True
 
+    split_file_key = config["eval_set_evaluation"].get("split_file_key", "val_file")
     for eval_task in task_order:
         task_config = config["tasks"][eval_task]
         task_name = task_config["name"]
 
         print(
             f"Evaluating step={step}, checkpoint={checkpoint_task}, "
-            f"eval_task={eval_task}-{task_name}"
+            f"eval_task={eval_task}-{task_name},"
+            f"split_file_key={split_file_key}"
         )
 
         task_prompt = get_task_prompt(task_name)
@@ -199,6 +285,7 @@ def evaluate_checkpoint_on_all_tasks(
         metrics = evaluate_accuracy(
             model=model,
             tokenizer=tokenizer,
+            config=config,
             data_file=task_config[split_file_key],
             task_name=task_name,
             task_prompt=task_prompt,
@@ -239,58 +326,10 @@ def evaluate_checkpoint_on_all_tasks(
     return rows
 
 
-def generate_answer(
-    model,
-    tokenizer,
-    example: Dict[str, Any],
-    task_prompt: str,
-    system_prompt: str,
-    device,
-    max_new_tokens: int,
-    enable_thinking: bool = False,
-    use_system_prompt: bool = False,
-) -> str:
-    messages = build_messages(
-        prompt=example["prompt"],
-        task_prompt=task_prompt,
-        system_prompt=system_prompt,
-        use_system_prompt=use_system_prompt,
-    )
-
-    text = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-        enable_thinking=enable_thinking,
-    )
-
-    inputs = tokenizer(
-        text,
-        return_tensors="pt",
-        add_special_tokens=False,
-    ).to(device)
-
-    with torch.no_grad():
-        outputs = model.generate(
-            **inputs,
-            max_new_tokens=max_new_tokens,
-            do_sample=False,
-            pad_token_id=tokenizer.pad_token_id,
-            eos_token_id=tokenizer.eos_token_id,
-        )
-
-    generated_ids = outputs[0][inputs["input_ids"].shape[-1] :]
-    text = tokenizer.decode(generated_ids, skip_special_tokens=False).strip()
-
-    ended_with_eos = tokenizer.eos_token_id in generated_ids
-    hit_max_tokens = len(generated_ids) >= max_new_tokens and not ended_with_eos
-
-    return text, hit_max_tokens
-
-
 def evaluate_accuracy(
     model,
     tokenizer,
+    config: Dict[str, Any],
     data_file: str,
     task_name: str,
     task_prompt: str,
@@ -336,6 +375,7 @@ def evaluate_accuracy(
         predictions = generate_batch_from_texts(
             model=model,
             tokenizer=tokenizer,
+            config=config,
             texts=texts,
             device=device,
             max_new_tokens=max_new_tokens,
@@ -440,6 +480,7 @@ def _evaluate_reference_set(
         predictions = generate_batch_from_texts(
             model=model,
             tokenizer=tokenizer,
+            config=config,
             texts=texts,
             device=device,
             max_new_tokens=max_new_tokens,
