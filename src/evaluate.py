@@ -1,8 +1,17 @@
+"""Evaluation utilities for task accuracy and reference-set scoring.
+
+This module renders chat prompts, runs batched generation, normalizes model
+outputs, and writes per-task/reference evaluation artifacts. The lower-level
+helpers are intentionally small so generation behavior such as EOS handling and
+sampling configuration can be tested independently.
+"""
+
 import csv
 import json
 import os
 from collections import defaultdict
-from typing import Any, Dict, List
+from collections.abc import Iterator, Sequence
+from typing import Any
 
 import torch
 from datasets import load_dataset
@@ -18,13 +27,35 @@ from data import build_messages, get_task_prompt
 from utils import normalize_answer
 
 
-def batch_iter(dataset, batch_size: int):
+def batch_iter(dataset: Sequence[Any], batch_size: int) -> Iterator[list[Any]]:
+    """Yield fixed-size batches from an indexable dataset.
+
+    Args:
+        dataset: Indexable dataset or sequence.
+        batch_size: Maximum number of examples per yielded batch.
+
+    Yields:
+        Lists of dataset rows. The final batch may be smaller than
+        ``batch_size``.
+    """
     for start in range(0, len(dataset), batch_size):
         end = min(start + batch_size, len(dataset))
         yield [dataset[i] for i in range(start, end)]
 
 
-def _eos_found(generated_ids, eos_token_id) -> bool:
+def _eos_found(
+    generated_ids: torch.Tensor,
+    eos_token_id: int | list[int] | None,
+) -> bool:
+    """Return whether any EOS token appears in generated token ids.
+
+    Args:
+        generated_ids: One generated token-id sequence.
+        eos_token_id: Single EOS id, multiple EOS ids, or ``None``.
+
+    Returns:
+        ``True`` if any configured EOS id occurs in ``generated_ids``.
+    """
     if eos_token_id is None:
         return False
 
@@ -35,13 +66,27 @@ def _eos_found(generated_ids, eos_token_id) -> bool:
 
 
 def build_generation_text(
-    tokenizer,
-    example: Dict[str, Any],
+    tokenizer: Any,
+    example: dict[str, Any],
     task_prompt: str,
     system_prompt: str,
     use_system_prompt: bool,
     enable_thinking: bool = False,
 ) -> str:
+    """Render one dataset example into a generation prompt string.
+
+    Args:
+        tokenizer: Tokenizer implementing ``apply_chat_template``.
+        example: Dataset row containing a ``prompt`` field.
+        task_prompt: Task-level instruction prepended to the raw prompt.
+        system_prompt: Optional system message text.
+        use_system_prompt: Whether to include the system message.
+        enable_thinking: Passed through to chat-template rendering.
+
+    Returns:
+        Rendered chat-template string ending with an assistant generation
+        prompt.
+    """
     messages = build_messages(
         prompt=example["prompt"],
         task_prompt=task_prompt,
@@ -57,7 +102,18 @@ def build_generation_text(
     )
 
 
-def get_pad_token_id(tokenizer):
+def get_pad_token_id(tokenizer: Any) -> int:
+    """Return a usable padding token id for generation.
+
+    Args:
+        tokenizer: Tokenizer with ``pad_token_id`` and/or ``eos_token_id``.
+
+    Returns:
+        The tokenizer pad token id, falling back to EOS when padding is absent.
+
+    Raises:
+        ValueError: If neither pad nor EOS token id is available.
+    """
     if tokenizer.pad_token_id is not None:
         return tokenizer.pad_token_id
     if tokenizer.eos_token_id is not None:
@@ -65,10 +121,20 @@ def get_pad_token_id(tokenizer):
     raise ValueError("Tokenizer has neither pad_token_id nor eos_token_id.")
 
 
-def get_eos_token_ids(tokenizer, model=None):
-    eos_ids = []
+def get_eos_token_ids(tokenizer: Any, model: Any | None = None) -> list[int] | None:
+    """Collect all EOS token ids relevant for chat generation.
 
-    def add_id(x):
+    Args:
+        tokenizer: Tokenizer with EOS metadata and token-id conversion.
+        model: Optional model whose generation config may define extra EOS ids.
+
+    Returns:
+        Ordered unique EOS ids from the tokenizer, model generation config, and
+        common chat end markers. Returns ``None`` when no ids are available.
+    """
+    eos_ids: list[int] = []
+
+    def add_id(x: int | list[int] | None) -> None:
         if x is None:
             return
         if isinstance(x, list):
@@ -94,7 +160,20 @@ def get_eos_token_ids(tokenizer, model=None):
     return eos_ids if eos_ids else None
 
 
-def trim_after_eos(generated_ids, eos_token_id):
+def trim_after_eos(
+    generated_ids: torch.Tensor,
+    eos_token_id: int | list[int] | None,
+) -> torch.Tensor:
+    """Trim generated ids after the first EOS token, keeping that EOS token.
+
+    Args:
+        generated_ids: One generated token-id sequence.
+        eos_token_id: Single EOS id, multiple EOS ids, or ``None``.
+
+    Returns:
+        ``generated_ids`` up to and including the first EOS token. If no EOS id
+        is configured or found, returns the original tensor.
+    """
     if eos_token_id is None:
         return generated_ids
 
@@ -107,7 +186,16 @@ def trim_after_eos(generated_ids, eos_token_id):
     return generated_ids
 
 
-def build_generation_kwargs(config):
+def build_generation_kwargs(config: dict[str, Any]) -> dict[str, Any]:
+    """Build keyword arguments for ``model.generate`` from config.
+
+    Args:
+        config: Experiment config that may contain a ``generation`` section.
+
+    Returns:
+        Generation keyword arguments. Sampling-only parameters such as
+        temperature and top-p are included only when sampling is enabled.
+    """
     generation_cfg = config.get("generation", {})
     do_sample = generation_cfg.get("do_sample", GENERATION_DO_SAMPLE)
 
@@ -129,11 +217,11 @@ def build_generation_kwargs(config):
 def generate_batch_from_texts(
     model,
     tokenizer,
-    config: Dict[str, Any],
-    texts: List[str],
+    config: dict[str, Any],
+    texts: list[str],
     device,
     max_new_tokens: int,
-) -> List[tuple[str, bool]]:
+) -> list[tuple[str, bool]]:
     """
     Batched generation from already-rendered chat-template strings.
 
@@ -191,7 +279,7 @@ def generate_batch_from_texts(
 
 
 def save_eval_results(
-    val_metrics: Dict[str, Any],
+    val_metrics: dict[str, Any],
     output_dir: str,
     task: str,
     seed: int,
@@ -217,7 +305,7 @@ def save_eval_results(
 
 def append_score_rows(
     output_dir: str,
-    rows: List[Dict[str, Any]],
+    rows: list[dict[str, Any]],
     filename: str = "scores.csv",
 ):
     os.makedirs(output_dir, exist_ok=True)
@@ -249,8 +337,8 @@ def append_score_rows(
 def evaluate_checkpoint_on_all_tasks(
     model,
     tokenizer,
-    config: Dict[str, Any],
-    task_order: List[str],
+    config: dict[str, Any],
+    task_order: list[str],
     system_prompt: str,
     use_system_prompt: bool,
     step: int,
@@ -329,7 +417,7 @@ def evaluate_checkpoint_on_all_tasks(
 def evaluate_accuracy(
     model,
     tokenizer,
-    config: Dict[str, Any],
+    config: dict[str, Any],
     data_file: str,
     task_name: str,
     task_prompt: str,
@@ -339,7 +427,7 @@ def evaluate_accuracy(
     max_examples: int | None = None,
     max_new_tokens: int = 256,
     batch_size: int = 4,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     dataset = load_dataset("json", data_files=data_file, split="train")
 
     if max_examples is not None:
@@ -351,7 +439,7 @@ def evaluate_accuracy(
 
     correct = 0
     total = 0
-    rows: List[Dict[str, Any]] = []
+    rows: list[dict[str, Any]] = []
 
     num_batches = (len(dataset) + batch_size - 1) // batch_size
 
@@ -411,7 +499,23 @@ def evaluate_accuracy(
     }
 
 
-def resolve_reference_task_name(example, config):
+def resolve_reference_task_name(
+    example: dict[str, Any],
+    config: dict[str, Any],
+) -> str:
+    """Resolve a reference-set row to a normalized task name.
+
+    Args:
+        example: Reference-set row. It may include either ``task_name`` or a
+            ``task_id`` that appears in ``config["tasks"]``.
+        config: Experiment configuration containing task metadata.
+
+    Returns:
+        Lowercase task name used for prompting and answer normalization.
+
+    Raises:
+        ValueError: If neither a task name nor a resolvable task id is present.
+    """
     if "task_name" in example and example["task_name"]:
         return str(example["task_name"]).strip().lower()
 
