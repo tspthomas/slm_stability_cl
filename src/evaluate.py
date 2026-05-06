@@ -215,18 +215,30 @@ def build_generation_kwargs(config: dict[str, Any]) -> dict[str, Any]:
 
 
 def generate_batch_from_texts(
-    model,
-    tokenizer,
+    model: Any,
+    tokenizer: Any,
     config: dict[str, Any],
     texts: list[str],
-    device,
+    device: torch.device | str,
     max_new_tokens: int,
 ) -> list[tuple[str, bool]]:
-    """
-    Batched generation from already-rendered chat-template strings.
+    """Generate completions for already-rendered chat-template strings.
+
+    The tokenizer is temporarily switched to left padding so decoder-only
+    models generate from the rightmost prompt token. The original padding side
+    is restored before returning, even if tokenization fails.
+
+    Args:
+        model: Causal language model with a ``generate`` method.
+        tokenizer: Tokenizer used for padding, tokenization, and decoding.
+        config: Experiment config containing optional generation settings.
+        texts: Rendered prompt strings.
+        device: Device where tokenized inputs should be moved.
+        max_new_tokens: Maximum number of tokens to generate per prompt.
 
     Returns:
-        List of (decoded_text, hit_max_tokens)
+        ``(decoded_text, hit_max_tokens)`` pairs. ``hit_max_tokens`` is true
+        when generation reached ``max_new_tokens`` without emitting EOS.
     """
     pad_token_id = get_pad_token_id(tokenizer)
     eos_token_ids = get_eos_token_ids(tokenizer, model)
@@ -285,6 +297,20 @@ def save_eval_results(
     seed: int,
     split_name: str = "val",
 ) -> str:
+    """Write per-example predictions and aggregate metrics for one eval split.
+
+    Args:
+        val_metrics: Metrics dictionary from ``evaluate_accuracy``. The
+            optional ``examples`` key is written as JSONL and excluded from the
+            aggregate metrics JSON.
+        output_dir: Root experiment output directory.
+        task: Task label embedded in the output directory name.
+        seed: Experiment seed embedded in the output directory name.
+        split_name: Split prefix used for prediction and metrics filenames.
+
+    Returns:
+        Directory containing the written evaluation artifacts.
+    """
     eval_output_dir = os.path.join(output_dir, f"eval_{task}_{seed}")
     os.makedirs(eval_output_dir, exist_ok=True)
 
@@ -307,7 +333,14 @@ def append_score_rows(
     output_dir: str,
     rows: list[dict[str, Any]],
     filename: str = "scores.csv",
-):
+) -> None:
+    """Append task-level score rows to a cumulative CSV file.
+
+    Args:
+        output_dir: Directory where the CSV file should live.
+        rows: Flat score dictionaries matching the configured CSV fieldnames.
+        filename: CSV filename relative to ``output_dir``.
+    """
     os.makedirs(output_dir, exist_ok=True)
     path = os.path.join(output_dir, filename)
 
@@ -335,8 +368,8 @@ def append_score_rows(
 
 
 def evaluate_checkpoint_on_all_tasks(
-    model,
-    tokenizer,
+    model: Any,
+    tokenizer: Any,
     config: dict[str, Any],
     task_order: list[str],
     system_prompt: str,
@@ -344,8 +377,27 @@ def evaluate_checkpoint_on_all_tasks(
     step: int,
     checkpoint_task: str,
     seed: int,
-    device,
-):
+    device: torch.device | str,
+) -> list[dict[str, Any]] | None:
+    """Evaluate one checkpoint on every configured task validation split.
+
+    Args:
+        model: Model to evaluate.
+        tokenizer: Tokenizer used for prompt rendering and generation.
+        config: Experiment configuration.
+        task_order: Ordered task ids from the continual-learning schedule.
+        system_prompt: Optional system prompt content.
+        use_system_prompt: Whether system prompts are included in rendered
+            messages.
+        step: Continual-learning step for this checkpoint.
+        checkpoint_task: Task id or ``"base"`` identifying the checkpoint.
+        seed: Experiment seed.
+        device: Device used for generation.
+
+    Returns:
+        Rows appended to the score CSV, or ``None`` when main eval-set
+        evaluation is disabled.
+    """
     if not config.get("eval_set_evaluation", {}).get("enabled", False):
         print(
             "Skipping evaluation on main validation sets as eval_set_evaluation is disabled in config."
@@ -415,19 +467,40 @@ def evaluate_checkpoint_on_all_tasks(
 
 
 def evaluate_accuracy(
-    model,
-    tokenizer,
+    model: Any,
+    tokenizer: Any,
     config: dict[str, Any],
     data_file: str,
     task_name: str,
     task_prompt: str,
     system_prompt: str,
     use_system_prompt: bool,
-    device,
+    device: torch.device | str,
     max_examples: int | None = None,
     max_new_tokens: int = 256,
     batch_size: int = 4,
 ) -> dict[str, Any]:
+    """Compute exact-match accuracy for one dataset file.
+
+    Args:
+        model: Model to evaluate.
+        tokenizer: Tokenizer used for prompt rendering and generation.
+        config: Experiment configuration.
+        data_file: JSON dataset file containing ``prompt`` and ``answer``.
+        task_name: Normalization task name.
+        task_prompt: Task-level instruction prompt.
+        system_prompt: Optional system prompt content.
+        use_system_prompt: Whether system prompts are included in rendered
+            messages.
+        device: Device used for generation.
+        max_examples: Optional cap for smoke-test evaluation.
+        max_new_tokens: Maximum tokens generated per example.
+        batch_size: Generation batch size.
+
+    Returns:
+        Aggregate accuracy metrics plus an ``examples`` list with per-example
+        predictions.
+    """
     dataset = load_dataset("json", data_files=data_file, split="train")
 
     if max_examples is not None:
@@ -529,16 +602,35 @@ def resolve_reference_task_name(
 
 
 def _evaluate_reference_set(
-    model,
-    tokenizer,
-    config,
-    system_prompt,
+    model: Any,
+    tokenizer: Any,
+    config: dict[str, Any],
+    system_prompt: str,
     use_system_prompt: bool,
     step: int,
     checkpoint_task: str,
     seed: int,
-    device,
-):
+    device: torch.device | str,
+) -> dict[str, Any]:
+    """Evaluate one checkpoint on the mixed-task reference set.
+
+    Args:
+        model: Model to evaluate.
+        tokenizer: Tokenizer used for prompt rendering and generation.
+        config: Experiment configuration with a ``reference_set_evaluation``
+            section.
+        system_prompt: Optional system prompt content.
+        use_system_prompt: Whether system prompts are included in rendered
+            messages.
+        step: Continual-learning step for this checkpoint.
+        checkpoint_task: Task id or ``"base"`` identifying the checkpoint.
+        seed: Experiment seed.
+        device: Device used for generation.
+
+    Returns:
+        Aggregate reference-set metrics, per-task metrics, and per-example
+        predictions.
+    """
     reference_file = config["reference_set_evaluation"]["file"]
     dataset = load_dataset("json", data_files=reference_file, split="train")
 
@@ -645,7 +737,19 @@ def _evaluate_reference_set(
     }
 
 
-def save_reference_results(reference_metrics, output_dir: str, seed: int):
+def save_reference_results(
+    reference_metrics: dict[str, Any],
+    output_dir: str,
+    seed: int,
+) -> None:
+    """Write reference-set predictions, metrics, and cumulative score CSV.
+
+    Args:
+        reference_metrics: Metrics dictionary returned by
+            ``_evaluate_reference_set``.
+        output_dir: Root experiment output directory.
+        seed: Experiment seed embedded in the output directory name.
+    """
     ref_output_dir = os.path.join(output_dir, f"reference_seed_{seed}")
     os.makedirs(ref_output_dir, exist_ok=True)
 
@@ -705,16 +809,34 @@ def save_reference_results(reference_metrics, output_dir: str, seed: int):
 
 
 def evaluate_reference_set(
-    model,
-    tokenizer,
-    config,
-    system_prompt,
+    model: Any,
+    tokenizer: Any,
+    config: dict[str, Any],
+    system_prompt: str,
     use_system_prompt: bool,
     step: int,
     checkpoint_task: str,
     seed: int,
-    device,
-):
+    device: torch.device | str,
+) -> dict[str, Any] | None:
+    """Evaluate and persist metrics for the configured reference set.
+
+    Args:
+        model: Model to evaluate.
+        tokenizer: Tokenizer used for prompt rendering and generation.
+        config: Experiment configuration.
+        system_prompt: Optional system prompt content.
+        use_system_prompt: Whether system prompts are included in rendered
+            messages.
+        step: Continual-learning step for this checkpoint.
+        checkpoint_task: Task id or ``"base"`` identifying the checkpoint.
+        seed: Experiment seed.
+        device: Device used for generation.
+
+    Returns:
+        Reference metrics dictionary, or ``None`` when reference-set evaluation
+        is disabled.
+    """
     if not config.get("reference_set_evaluation", {}).get("enabled", False):
         print(
             "Skipping evaluation on reference set as reference_set_evaluation is disabled in config."

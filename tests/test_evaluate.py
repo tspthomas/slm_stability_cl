@@ -1,10 +1,16 @@
+import csv
+import json
+import os
 import sys
+import tempfile
 import unittest
 from types import SimpleNamespace
+from unittest.mock import patch
 
 import torch
 
 sys.path.insert(0, "./src")
+import evaluate
 from constants import (
     GENERATION_DO_SAMPLE,
     GENERATION_USE_CACHE,
@@ -15,10 +21,18 @@ from evaluate import (
     batch_iter,
     build_generation_kwargs,
     build_generation_text,
+    append_score_rows,
+    evaluate_accuracy,
+    evaluate_checkpoint_on_all_tasks,
+    evaluate_reference_set,
+    generate_batch_from_texts,
     get_eos_token_ids,
     get_pad_token_id,
     resolve_reference_task_name,
+    save_eval_results,
+    save_reference_results,
     trim_after_eos,
+    _evaluate_reference_set,
 )
 
 
@@ -58,6 +72,74 @@ class FakeTokenizer:
             }
         )
         return "|".join(message["role"] for message in messages)
+
+
+class FakeBatchEncoding(dict):
+    def to(self, device):
+        self["device"] = device
+        return self
+
+
+class FakeGenerationTokenizer(FakeTokenizer):
+    def __init__(self):
+        super().__init__(pad_token_id=None, eos_token_id=99)
+        self.eos_token = "<eos>"
+        self.pad_token = None
+        self.padding_side = "right"
+        self.tokenized_padding_sides = []
+
+    def __call__(self, texts, return_tensors=None, padding=None, add_special_tokens=None):
+        self.tokenized_padding_sides.append(self.padding_side)
+        input_ids = torch.tensor(
+            [
+                [10, 11, 12],
+                [20, 21, 22],
+            ],
+            dtype=torch.long,
+        )
+        return FakeBatchEncoding({"input_ids": input_ids})
+
+    def decode(self, token_ids, skip_special_tokens=False):
+        return " ".join(str(token_id) for token_id in token_ids.tolist())
+
+
+class FakeGenerationModel:
+    def __init__(self):
+        self.generation_config = SimpleNamespace(eos_token_id=None)
+        self.generate_kwargs = None
+
+    def generate(self, **kwargs):
+        self.generate_kwargs = kwargs
+        return torch.tensor(
+            [
+                [10, 11, 12, 7, 99, 8],
+                [20, 21, 22, 7, 8, 9],
+            ],
+            dtype=torch.long,
+        )
+
+
+class FakeDataset:
+    def __init__(self, rows):
+        self.rows = rows
+
+    def __len__(self):
+        return len(self.rows)
+
+    def __getitem__(self, idx):
+        return self.rows[idx]
+
+    def select(self, indices):
+        return FakeDataset([self.rows[idx] for idx in indices])
+
+
+class FakeEvalModel:
+    def __init__(self):
+        self.config = SimpleNamespace(use_cache=False)
+        self.eval_called = False
+
+    def eval(self):
+        self.eval_called = True
 
 
 class TestEvaluateHelpers(unittest.TestCase):
@@ -180,6 +262,369 @@ class TestEvaluateHelpers(unittest.TestCase):
     def test_resolve_reference_task_name_requires_name_or_known_id(self):
         with self.assertRaisesRegex(ValueError, "Reference example must contain"):
             resolve_reference_task_name({"task_id": "missing"}, {"tasks": {}})
+
+
+class TestEvaluateWorkflows(unittest.TestCase):
+    def test_generate_batch_from_texts_restores_padding_and_reports_max_tokens(self):
+        tokenizer = FakeGenerationTokenizer()
+        model = FakeGenerationModel()
+
+        results = generate_batch_from_texts(
+            model=model,
+            tokenizer=tokenizer,
+            config={},
+            texts=["one", "two"],
+            device="cpu",
+            max_new_tokens=3,
+        )
+
+        self.assertEqual(tokenizer.padding_side, "right")
+        self.assertEqual(tokenizer.tokenized_padding_sides, ["left"])
+        self.assertEqual(tokenizer.pad_token, tokenizer.eos_token)
+        self.assertEqual(results, [("7 99", False), ("7 8 9", True)])
+        self.assertEqual(model.generate_kwargs["pad_token_id"], 99)
+        self.assertEqual(model.generate_kwargs["max_new_tokens"], 3)
+
+    def test_save_eval_results_writes_predictions_and_metrics(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = save_eval_results(
+                val_metrics={
+                    "task_name": "scienceqa",
+                    "accuracy": 0.5,
+                    "examples": [{"prompt": "p1"}, {"prompt": "p2"}],
+                },
+                output_dir=tmpdir,
+                task="task_1",
+                seed=33,
+                split_name="val",
+            )
+
+            with open(
+                os.path.join(output_dir, "val_predictions.jsonl"),
+                encoding="utf-8",
+            ) as f:
+                prediction_rows = [json.loads(line) for line in f]
+
+            with open(
+                os.path.join(output_dir, "val_metrics.json"),
+                encoding="utf-8",
+            ) as f:
+                metrics = json.load(f)
+
+        self.assertEqual(prediction_rows, [{"prompt": "p1"}, {"prompt": "p2"}])
+        self.assertEqual(metrics, {"task_name": "scienceqa", "accuracy": 0.5})
+
+    def test_append_score_rows_writes_header_once(self):
+        rows = [
+            {
+                "seed": 1,
+                "step": 0,
+                "checkpoint_task": "base",
+                "eval_task": "task_1",
+                "eval_task_name": "scienceqa",
+                "accuracy": 1.0,
+                "correct": 2,
+                "total": 2,
+            }
+        ]
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            append_score_rows(tmpdir, rows, filename="scores.csv")
+            append_score_rows(tmpdir, rows, filename="scores.csv")
+
+            with open(os.path.join(tmpdir, "scores.csv"), newline="", encoding="utf-8") as f:
+                csv_rows = list(csv.DictReader(f))
+
+        self.assertEqual(len(csv_rows), 2)
+        self.assertEqual(csv_rows[0]["checkpoint_task"], "base")
+        self.assertEqual(csv_rows[1]["accuracy"], "1.0")
+
+    def test_evaluate_checkpoint_on_all_tasks_returns_none_when_disabled(self):
+        model = FakeEvalModel()
+
+        with patch("builtins.print"):
+            rows = evaluate_checkpoint_on_all_tasks(
+                model=model,
+                tokenizer=object(),
+                config={"eval_set_evaluation": {"enabled": False}},
+                task_order=["task_1"],
+                system_prompt="system",
+                use_system_prompt=False,
+                step=0,
+                checkpoint_task="base",
+                seed=1,
+                device="cpu",
+            )
+
+        self.assertIsNone(rows)
+        self.assertFalse(model.eval_called)
+
+    def test_evaluate_checkpoint_on_all_tasks_saves_rows_when_enabled(self):
+        model = FakeEvalModel()
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = {
+                "eval_set_evaluation": {
+                    "enabled": True,
+                    "split_file_key": "val_file",
+                    "max_examples": 2,
+                    "max_new_tokens": 4,
+                },
+                "experiment": {"output_dir": tmpdir},
+                "tasks": {"task_1": {"name": "scienceqa", "val_file": "val.json"}},
+            }
+
+            with (
+                patch.object(
+                    evaluate,
+                    "evaluate_accuracy",
+                    return_value={
+                        "accuracy": 1.0,
+                        "correct": 2,
+                        "total": 2,
+                        "examples": [{"prompt": "p"}],
+                    },
+                ) as eval_accuracy,
+                patch("builtins.print"),
+            ):
+                rows = evaluate_checkpoint_on_all_tasks(
+                    model=model,
+                    tokenizer=object(),
+                    config=config,
+                    task_order=["task_1"],
+                    system_prompt="system",
+                    use_system_prompt=True,
+                    step=1,
+                    checkpoint_task="task_1",
+                    seed=33,
+                    device="cpu",
+                )
+
+            self.assertEqual(rows[0]["accuracy"], 1.0)
+            self.assertTrue(model.eval_called)
+            self.assertTrue(model.config.use_cache)
+            eval_accuracy.assert_called_once()
+            self.assertTrue(os.path.exists(os.path.join(tmpdir, "scores_seed_33.csv")))
+
+    def test_evaluate_accuracy_computes_exact_match_metrics(self):
+        model = FakeEvalModel()
+        dataset = FakeDataset(
+            [
+                {"prompt": "p1", "answer": "A"},
+                {"prompt": "p2", "answer": "B"},
+            ]
+        )
+
+        with (
+            patch.object(evaluate, "load_dataset", return_value=dataset),
+            patch.object(evaluate, "tqdm", side_effect=lambda iterable, **_: iterable),
+            patch.object(
+                evaluate,
+                "generate_batch_from_texts",
+                return_value=[("A", False), ("C", True)],
+            ),
+        ):
+            metrics = evaluate_accuracy(
+                model=model,
+                tokenizer=FakeTokenizer(),
+                config={},
+                data_file="data.json",
+                task_name="scienceqa",
+                task_prompt=QWEN_MULTIPLE_CHOICE_PROMPT,
+                system_prompt="system",
+                use_system_prompt=False,
+                device="cpu",
+                batch_size=2,
+            )
+
+        self.assertEqual(metrics["accuracy"], 0.5)
+        self.assertEqual(metrics["correct"], 1)
+        self.assertEqual(metrics["total"], 2)
+        self.assertEqual(metrics["examples"][1]["prediction"], "C")
+        self.assertTrue(metrics["examples"][1]["hit_max_tokens"])
+
+    def test_evaluate_accuracy_applies_max_examples(self):
+        model = FakeEvalModel()
+        dataset = FakeDataset(
+            [
+                {"prompt": "p1", "answer": "A"},
+                {"prompt": "p2", "answer": "B"},
+            ]
+        )
+
+        with (
+            patch.object(evaluate, "load_dataset", return_value=dataset),
+            patch.object(evaluate, "tqdm", side_effect=lambda iterable, **_: iterable),
+            patch.object(
+                evaluate,
+                "generate_batch_from_texts",
+                return_value=[("A", False)],
+            ),
+            patch("builtins.print"),
+        ):
+            metrics = evaluate_accuracy(
+                model=model,
+                tokenizer=FakeTokenizer(),
+                config={},
+                data_file="data.json",
+                task_name="scienceqa",
+                task_prompt=QWEN_MULTIPLE_CHOICE_PROMPT,
+                system_prompt="system",
+                use_system_prompt=False,
+                device="cpu",
+                max_examples=1,
+                batch_size=2,
+            )
+
+        self.assertEqual(metrics["total"], 1)
+        self.assertEqual(metrics["accuracy"], 1.0)
+
+    def test_evaluate_reference_set_returns_none_when_disabled(self):
+        with patch("builtins.print"):
+            metrics = evaluate_reference_set(
+                model=FakeEvalModel(),
+                tokenizer=object(),
+                config={"reference_set_evaluation": {"enabled": False}},
+                system_prompt="system",
+                use_system_prompt=False,
+                step=0,
+                checkpoint_task="base",
+                seed=1,
+                device="cpu",
+            )
+
+        self.assertIsNone(metrics)
+
+    def test_evaluate_reference_set_saves_metrics_when_enabled(self):
+        reference_metrics = {
+            "seed": 33,
+            "step": 1,
+            "checkpoint_task": "task_1",
+            "accuracy": 1.0,
+            "correct": 1,
+            "total": 1,
+            "per_task": {},
+            "examples": [],
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config = {
+                "reference_set_evaluation": {"enabled": True},
+                "experiment": {"output_dir": tmpdir},
+            }
+            with (
+                patch.object(
+                    evaluate,
+                    "_evaluate_reference_set",
+                    return_value=reference_metrics,
+                ) as eval_reference,
+                patch("builtins.print"),
+            ):
+                result = evaluate_reference_set(
+                    model=FakeEvalModel(),
+                    tokenizer=object(),
+                    config=config,
+                    system_prompt="system",
+                    use_system_prompt=False,
+                    step=1,
+                    checkpoint_task="task_1",
+                    seed=33,
+                    device="cpu",
+                )
+
+            self.assertIs(result, reference_metrics)
+            eval_reference.assert_called_once()
+            self.assertTrue(
+                os.path.exists(
+                    os.path.join(
+                        tmpdir,
+                        "reference_seed_33",
+                        "step_1_task_1_reference_metrics.json",
+                    )
+                )
+            )
+
+    def test_evaluate_reference_set_internal_computes_per_task_metrics(self):
+        model = FakeEvalModel()
+        dataset = FakeDataset(
+            [
+                {"task_name": "scienceqa", "prompt": "p1", "answer": "A"},
+                {"task_id": "task_2", "prompt": "p2", "answer": "3"},
+            ]
+        )
+        config = {
+            "reference_set_evaluation": {
+                "file": "reference.jsonl",
+                "batch_size": 2,
+                "max_new_tokens": 2,
+            },
+            "tasks": {"task_2": {"name": "numgluecm"}},
+        }
+
+        with (
+            patch.object(evaluate, "load_dataset", return_value=dataset),
+            patch.object(evaluate, "tqdm", side_effect=lambda iterable, **_: iterable),
+            patch.object(
+                evaluate,
+                "generate_batch_from_texts",
+                return_value=[("A", False), ("4", False)],
+            ),
+        ):
+            metrics = _evaluate_reference_set(
+                model=model,
+                tokenizer=FakeTokenizer(),
+                config=config,
+                system_prompt="system",
+                use_system_prompt=False,
+                step=2,
+                checkpoint_task="task_2",
+                seed=33,
+                device="cpu",
+            )
+
+        self.assertEqual(metrics["accuracy"], 0.5)
+        self.assertEqual(metrics["per_task"]["scienceqa"]["accuracy"], 1.0)
+        self.assertEqual(metrics["per_task"]["numgluecm"]["accuracy"], 0.0)
+        self.assertEqual(metrics["examples"][0]["seed"], 33)
+
+    def test_save_reference_results_writes_predictions_metrics_and_scores(self):
+        reference_metrics = {
+            "seed": 33,
+            "step": 2,
+            "checkpoint_task": "task_2",
+            "accuracy": 0.5,
+            "correct": 1,
+            "total": 2,
+            "per_task": {"scienceqa": {"accuracy": 1.0, "correct": 1, "total": 1}},
+            "examples": [{"prompt": "p1"}, {"prompt": "p2"}],
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            save_reference_results(reference_metrics, tmpdir, seed=33)
+
+            output_dir = os.path.join(tmpdir, "reference_seed_33")
+            with open(
+                os.path.join(output_dir, "step_2_task_2_reference_predictions.jsonl"),
+                encoding="utf-8",
+            ) as f:
+                prediction_rows = [json.loads(line) for line in f]
+
+            with open(
+                os.path.join(output_dir, "step_2_task_2_reference_metrics.json"),
+                encoding="utf-8",
+            ) as f:
+                metrics = json.load(f)
+
+            with open(
+                os.path.join(output_dir, "reference_scores.csv"),
+                newline="",
+                encoding="utf-8",
+            ) as f:
+                score_rows = list(csv.DictReader(f))
+
+        self.assertEqual(prediction_rows, [{"prompt": "p1"}, {"prompt": "p2"}])
+        self.assertNotIn("examples", metrics)
+        self.assertEqual(score_rows[0]["reference_accuracy"], "0.5")
 
 
 if __name__ == "__main__":
