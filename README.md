@@ -115,6 +115,12 @@ the `experiment_name` and task order before launching them.
 
 ## Tests
 
+Install the project into the local `uv` environment before running tests:
+
+```bash
+uv sync
+```
+
 The current test suite uses Python's built-in `unittest` runner:
 
 ```bash
