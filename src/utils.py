@@ -1,20 +1,23 @@
-"""
-This module defines utility functions for handling text data and model inference.
+"""Shared utility functions for reproducible experiments and answer parsing.
+
+This module contains small helpers used across training and evaluation: random
+seed setup, device selection, LoRA configuration detection, and task-aware
+normalization of generated answers.
 """
 
 import re
-import torch
+
 import numpy as np
+import torch
 
 from constants import MULTIPLE_CHOICE_TASKS, NUMERIC_TASKS
 
 
 def set_seed(seed: int) -> None:
-    """
-    Set the random seed for reproducibility.
+    """Set random seeds for reproducible NumPy and PyTorch behavior.
 
     Args:
-        seed: The seed value to set for random number generators.
+        seed: Seed value passed to the supported random number generators.
     """
     torch.manual_seed(seed)
     np.random.seed(seed)
@@ -23,11 +26,11 @@ def set_seed(seed: int) -> None:
 
 
 def get_device() -> str:
-    """
-    Determine the available device (GPU, MPS, or CPU) for computation.
+    """Return the best available compute device name.
 
     Returns:
-        The name of the device to use ("cuda", "mps", or "cpu").
+        One of ``"mps"``, ``"cuda"``, or ``"cpu"``. MPS is preferred on
+        supported Apple hardware, followed by CUDA, then CPU.
     """
     if torch.backends.mps.is_available():
         return "mps"
@@ -36,27 +39,30 @@ def get_device() -> str:
     return "cpu"
 
 
-def is_config_lora(config: dict) -> bool:
-    """
-    Check if the provided configuration specifies using LoRA for parameter-efficient fine-tuning.
+def is_config_lora(config: dict[str, object]) -> bool:
+    """Return whether an experiment config requests LoRA fine-tuning.
 
     Args:
-        config: The configuration dictionary to check.
+        config: Experiment configuration dictionary.
+
     Returns:
-        True if LoRA is specified in the configuration, False otherwise.
+        ``True`` when ``config["peft"]["method"]`` is ``"lora"``.
     """
     is_lora = config.get("peft", {}) is not None
     return is_lora and config.get("peft", {}).get("method", "") == "lora"
 
 
 def strip_generation_artifacts(text: str) -> str:
-    """ "
-    Clean the generated text by removing common artifacts such as thinking blocks, chat markers, and markdown emphasis.
+    """Remove common model-generation artifacts from answer text.
+
+    This strips thinking blocks, chat-template end markers, and markdown
+    emphasis before downstream task-specific parsing.
 
     Args:
-        text: The generated text to clean.
+        text: Generated model text or reference answer text.
+
     Returns:
-        The cleaned text with artifacts removed.
+        Cleaned text with surrounding whitespace removed.
     """
     text = str(text).strip()
 
@@ -72,14 +78,17 @@ def strip_generation_artifacts(text: str) -> str:
 
 
 def normalize_number(text: str) -> str:
-    """
-    Normalize a numeric string by removing commas, trailing punctuation, and converting to a standard numeric format.
+    """Normalize a numeric string for exact-match comparison.
+
+    Commas and trailing punctuation are removed. Integer-valued floats are
+    canonicalized to integer strings, e.g. ``"186.0"`` becomes ``"186"``.
 
     Args:
-        text: The numeric string to normalize.
+        text: Numeric candidate text.
 
     Returns:
-        The normalized numeric string.
+        Normalized numeric string, or the original cleaned text when parsing as
+        a float fails.
     """
     text = text.strip()
     text = text.replace(",", "")
@@ -98,14 +107,17 @@ def normalize_number(text: str) -> str:
 
 
 def extract_number(text: str) -> str:
-    """
-    Extract a number from the generated text.
+    """Extract the most likely final numeric answer from generated text.
+
+    Explicit final-answer markers are preferred. If no marker contains a
+    number, the last number in the whole generation is returned.
 
     Args:
-        text: The generated text to extract the number from.
+        text: Generated model text or reference answer text.
 
     Returns:
-        The extracted number as a string.
+        Extracted and normalized number, or a cleaned fallback string when no
+        number is present.
     """
     text = strip_generation_artifacts(text)
 
@@ -134,14 +146,17 @@ def extract_number(text: str) -> str:
 
 
 def extract_multiple_choice(text: str) -> str:
-    """
-    Extract a multiple-choice option from the generated text.
+    """Extract the most likely final multiple-choice option.
+
+    The parser supports answer markers such as ``"final answer: C"`` and falls
+    back to the final standalone option letter from A through E.
 
     Args:
-        text: The generated text to extract the option from.
+        text: Generated model text or reference answer text.
 
     Returns:
-        The extracted multiple-choice option as a string.
+        Uppercase option letter, or a cleaned fallback string when no option is
+        found.
     """
     text = strip_generation_artifacts(text)
 
@@ -173,15 +188,19 @@ def extract_multiple_choice(text: str) -> str:
     return text.splitlines()[-1].strip().upper() if text.splitlines() else text.upper()
 
 
-def normalize_answer(text: str, task_name: str = None) -> str:
-    """
-    Normalize the model's generated answer based on the task type. For multiple-choice tasks, extract the option letter.
+def normalize_answer(text: str, task_name: str | None = None) -> str:
+    """Normalize an answer according to the task's expected answer format.
+
+    Multiple-choice tasks are reduced to an option letter, numeric tasks are
+    reduced to a canonical number string, and unknown tasks use a generic
+    final-answer fallback.
 
     Args:
-        text: The generated text containing the answer.
-        task_name: The name of the task to determine the normalization method.
+        text: Generated model text or reference answer text.
+        task_name: Task identifier used to select a normalization strategy.
+
     Returns:
-        The normalized answer string.
+        Normalized answer string for exact-match evaluation.
     """
     text = strip_generation_artifacts(text)
 
