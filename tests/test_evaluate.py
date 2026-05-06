@@ -1,7 +1,6 @@
 import csv
 import json
 import os
-import sys
 import tempfile
 import unittest
 from types import SimpleNamespace
@@ -9,7 +8,6 @@ from unittest.mock import patch
 
 import torch
 
-sys.path.insert(0, "./src")
 import evaluate
 from constants import (
     GENERATION_DO_SAMPLE,

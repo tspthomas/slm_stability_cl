@@ -1,11 +1,9 @@
-import sys
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
 import torch
 
-sys.path.insert(0, "./src")
 import train
 from constants import LORA_ALPHA, LORA_DROPOUT, LORA_RANK, LORA_TARGET_MODULES
 from train import build_lora_model, train_one_task

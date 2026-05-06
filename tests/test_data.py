@@ -1,10 +1,8 @@
-import sys
 import unittest
 from types import SimpleNamespace
 
 import torch
 
-sys.path.insert(0, "./src")
 from constants import DEFAULT_SYSTEM_PROMPT, QWEN_MULTIPLE_CHOICE_PROMPT
 from data import ChatSFTDataset, SFTCollator, build_messages, get_task_prompt
 

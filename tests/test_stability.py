@@ -2,7 +2,6 @@ import csv
 import json
 import math
 import os
-import sys
 import tempfile
 import unittest
 from contextlib import contextmanager
@@ -11,7 +10,6 @@ from unittest.mock import patch
 
 import torch
 
-sys.path.insert(0, "./src")
 import stability
 from constants import QWEN_MULTIPLE_CHOICE_PROMPT
 from stability import (

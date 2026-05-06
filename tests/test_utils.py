@@ -1,10 +1,8 @@
-import sys
 import unittest
 
 import numpy as np
 import torch
 
-sys.path.insert(0, "./src")
 from utils import (
     extract_multiple_choice,
     extract_number,
