@@ -1,12 +1,17 @@
-"""
-This module implements the stability evaluation logic.
+"""Reference-set stability metrics for continual-learning checkpoints.
+
+The stability pass tracks how confident and stable a checkpoint is on a fixed
+mixed-task reference set. For each prompt, the code records next-token entropy,
+the top-token margin, and, for LoRA-adapted models, KL divergence from the base
+model with adapters disabled.
 """
 
 import csv
 import json
 import math
 import os
-from typing import Any, Dict, List, Tuple
+from collections.abc import Iterator, Sequence
+from typing import Any
 
 import torch
 import torch.nn.functional as F
@@ -16,18 +21,39 @@ from tqdm.auto import tqdm
 from data import build_messages, get_task_prompt
 
 
-def batch_iter(dataset, batch_size: int):
+def batch_iter(dataset: Sequence[Any], batch_size: int) -> Iterator[list[Any]]:
+    """Yield fixed-size batches from an indexable reference dataset.
+
+    Args:
+        dataset: Indexable dataset or sequence.
+        batch_size: Maximum number of examples per yielded batch.
+
+    Yields:
+        Lists of dataset rows. The final batch may be smaller than
+        ``batch_size``.
+    """
     for start in range(0, len(dataset), batch_size):
         yield [dataset[i] for i in range(start, min(start + batch_size, len(dataset)))]
 
 
 def build_prompt_texts(
-    examples: List[Dict[str, Any]],
-    tokenizer,
+    examples: list[dict[str, Any]],
+    tokenizer: Any,
     system_prompt: str,
     use_system_prompt: bool,
-) -> List[str]:
-    texts = []
+) -> list[str]:
+    """Render reference examples into chat-template generation prompts.
+
+    Args:
+        examples: Reference rows with ``task_name`` and ``prompt`` fields.
+        tokenizer: Tokenizer implementing ``apply_chat_template``.
+        system_prompt: Optional system message content.
+        use_system_prompt: Whether to include the system message.
+
+    Returns:
+        Rendered prompt strings ending with an assistant generation prompt.
+    """
+    texts: list[str] = []
 
     for ex in examples:
         task_name = ex["task_name"].strip().lower()
@@ -53,21 +79,39 @@ def build_prompt_texts(
 
 
 def get_next_token_log_probs(
-    model, tokenizer, texts: List[str], device, max_length: int
-):
+    model: Any,
+    tokenizer: Any,
+    texts: list[str],
+    device: torch.device | str,
+    max_length: int,
+) -> torch.Tensor:
+    """Compute next-token log-probabilities for rendered prompts.
+
+    Args:
+        model: Causal language model returning logits.
+        tokenizer: Tokenizer used for left-padded batch tokenization.
+        texts: Rendered prompt strings.
+        device: Device where tokenized inputs should be moved.
+        max_length: Maximum prompt length during tokenization.
+
+    Returns:
+        Log-softmax probabilities for the token after the last non-padding
+        prompt token in each example.
+    """
     old_padding_side = tokenizer.padding_side
     tokenizer.padding_side = "left"
 
-    inputs = tokenizer(
-        texts,
-        return_tensors="pt",
-        padding=True,
-        truncation=True,
-        max_length=max_length,
-        add_special_tokens=False,
-    ).to(device)
-
-    tokenizer.padding_side = old_padding_side
+    try:
+        inputs = tokenizer(
+            texts,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=max_length,
+            add_special_tokens=False,
+        ).to(device)
+    finally:
+        tokenizer.padding_side = old_padding_side
 
     with torch.inference_mode():
         outputs = model(**inputs)
@@ -84,7 +128,17 @@ def get_next_token_log_probs(
     return F.log_softmax(next_token_logits, dim=-1)
 
 
-def summarize(values: List[float], name: str) -> Dict[str, float]:
+def summarize(values: list[float], name: str) -> dict[str, float]:
+    """Summarize one scalar metric with mean, p95, and p10.
+
+    Args:
+        values: Metric values collected across reference examples.
+        name: Prefix used in the returned metric keys.
+
+    Returns:
+        Dictionary with ``<name>_mean``, ``<name>_p95``, and ``<name>_p10``.
+        Empty inputs produce ``NaN`` values.
+    """
     if not values:
         return {
             f"{name}_mean": math.nan,
@@ -102,18 +156,37 @@ def summarize(values: List[float], name: str) -> Dict[str, float]:
 
 
 def _compute_reference_stability_metrics(
-    model,
-    tokenizer,
+    model: Any,
+    tokenizer: Any,
     reference_file: str,
     system_prompt: str,
-    device,
+    device: torch.device | str,
     seed: int,
     step: int,
     checkpoint_task: str,
     batch_size: int = 4,
     max_length: int = 512,
     use_system_prompt: bool = True,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
+    """Compute stability metrics for one checkpoint on the reference set.
+
+    Args:
+        model: Model to evaluate. If it exposes ``disable_adapter``, KL to the
+            base model is computed inside that context.
+        tokenizer: Tokenizer used for prompt rendering and tokenization.
+        reference_file: JSON reference-set file.
+        system_prompt: Optional system message content.
+        device: Device where tokenized inputs should be moved.
+        seed: Experiment seed.
+        step: Continual-learning step for this checkpoint.
+        checkpoint_task: Task id or ``"base"`` identifying the checkpoint.
+        batch_size: Reference-set batch size.
+        max_length: Maximum prompt length during tokenization.
+        use_system_prompt: Whether to include the system message.
+
+    Returns:
+        Flat metrics dictionary with entropy, margin, and KL summaries.
+    """
     dataset = load_dataset("json", data_files=reference_file, split="train")
 
     model.eval()
@@ -189,7 +262,7 @@ def _compute_reference_stability_metrics(
 
 
 def save_stability_results(
-    stability_metrics: Dict[str, Any],
+    stability_metrics: dict[str, Any],
     output_dir: str,
     seed: int,
     filename: str = "stability_scores.csv",
@@ -246,22 +319,33 @@ def save_stability_results(
 
 
 def compute_reference_stability_metrics(
-    model,
-    tokenizer,
-    config: Dict[str, Any],
+    model: Any,
+    tokenizer: Any,
+    config: dict[str, Any],
     system_prompt: str,
     use_system_prompt: bool,
-    device,
+    device: torch.device | str,
     seed: int,
     step: int,
     checkpoint_task: str,
-) -> Tuple[Dict[str, Any], str]:
-    """
-    Compute reference stability metrics for one checkpoint and save them.
+) -> tuple[dict[str, Any], str]:
+    """Compute and persist reference stability metrics for one checkpoint.
+
+    Args:
+        model: Model to evaluate.
+        tokenizer: Tokenizer used for prompt rendering and tokenization.
+        config: Experiment configuration containing reference, training, and
+            output settings.
+        system_prompt: Optional system message content.
+        use_system_prompt: Whether to include the system message.
+        device: Device where tokenized inputs should be moved.
+        seed: Experiment seed.
+        step: Continual-learning step for this checkpoint.
+        checkpoint_task: Task id or ``"base"`` identifying the checkpoint.
 
     Returns:
-        stability_metrics: computed metrics dict
-        stability_dir: directory where results were saved
+        ``(stability_metrics, stability_dir)``. Returns ``({}, "")`` when
+        stability metrics are disabled.
     """
     if not config.get("stability", {}).get("enabled", True):
         print("Stability metrics disabled. Skipping.")
@@ -286,7 +370,7 @@ def compute_reference_stability_metrics(
         max_length=config["training"]["max_length"],
     )
 
-    # For the base checkpoint, we don't have a "base" model to compare against, so we set KL to base metrics to 0.
+    # The base checkpoint is its own reference model, so KL to base is zero.
     if step == 0 and checkpoint_task == "base":
         stability_metrics["kl_to_base_mean"] = 0.0
         stability_metrics["kl_to_base_p95"] = 0.0
