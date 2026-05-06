@@ -1,8 +1,13 @@
-"""
-This module defines utility functions for training and fine-tuning language models.
+"""Training helpers for sequential language-model fine-tuning.
+
+This module contains the per-task training loop and the optional LoRA wrapping
+used by the continual-learning experiment. The training loop expects batches in
+the format returned by ``SFTCollator``: ``input_ids``, ``labels``, and
+``attention_mask`` tensors.
 """
 
 import gc
+from typing import Any
 
 import torch
 from peft import LoraConfig, TaskType, get_peft_model
@@ -13,15 +18,19 @@ from constants import LORA_ALPHA, LORA_DROPOUT, LORA_RANK, LORA_TARGET_MODULES
 from utils import is_config_lora
 
 
-def build_lora_model(model: torch.nn.Module, config: dict) -> torch.nn.Module:
-    """
-    Wrap the given model with LoRA for parameter-efficient fine-tuning based on the provided configuration.
+def build_lora_model(
+    model: torch.nn.Module,
+    config: dict[str, Any],
+) -> torch.nn.Module:
+    """Wrap a causal language model with a LoRA adapter.
 
     Args:
-        model: The base PyTorch model to wrap with LoRA.
-        config: A dictionary containing LoRA configuration parameters.
+        model: Base model to adapt.
+        config: Experiment configuration with a ``peft`` section. Missing LoRA
+            hyperparameters fall back to project defaults from ``constants``.
+
     Returns:
-        The model wrapped with LoRA for fine-tuning.
+        Model returned by ``peft.get_peft_model``.
     """
     lora_cfg = config["peft"]
 
@@ -43,17 +52,22 @@ def build_lora_model(model: torch.nn.Module, config: dict) -> torch.nn.Module:
 def train_one_task(
     model: torch.nn.Module,
     train_data_loader: torch.utils.data.DataLoader,
-    config: dict,
-    device: torch.device,
+    config: dict[str, Any],
+    device: torch.device | str,
 ) -> None:
-    """
-    Train the model on a single task using the provided training data loader and configuration.
+    """Fine-tune a model on one task's SFT batches.
+
+    The loop supports gradient accumulation, optional gradient checkpointing,
+    optional batch limiting for smoke tests, and gradient clipping. It disables
+    ``model.config.use_cache`` during training to avoid incompatibilities with
+    checkpointing.
 
     Args:
-        model: The PyTorch model to train.
-        train_data_loader: DataLoader providing the training data for the current task.
-        config: A dictionary containing training hyperparameters and settings.
-        device: The device (CPU or GPU) to perform training on.
+        model: Model whose ``forward`` call returns an object with a ``loss``
+            tensor.
+        train_data_loader: Iterable dataloader yielding tensor dictionaries.
+        config: Experiment configuration containing a ``training`` section.
+        device: Device name or object where batch tensors should be moved.
     """
     num_epochs = config["training"]["num_epochs"]
     learning_rate = float(config["training"].get("learning_rate", 5e-5))
