@@ -50,6 +50,7 @@ class FakePromptTokenizer:
         tokenize=False,
         add_generation_prompt=False,
         enable_thinking=False,
+        **chat_template_kwargs,
     ):
         self.rendered_messages.append(
             {
@@ -57,6 +58,7 @@ class FakePromptTokenizer:
                 "tokenize": tokenize,
                 "add_generation_prompt": add_generation_prompt,
                 "enable_thinking": enable_thinking,
+                "chat_template_kwargs": chat_template_kwargs,
             }
         )
         return "|".join(message["role"] for message in messages)
@@ -122,12 +124,14 @@ class TestStability(unittest.TestCase):
 
     def test_build_prompt_texts_renders_task_specific_prompts(self):
         tokenizer = FakePromptTokenizer()
+        fixed_kwargs = {"date_string": "26 Jul 2024"}
 
         texts = build_prompt_texts(
             examples=[{"task_name": " ScienceQA ", "prompt": "Question?"}],
             tokenizer=tokenizer,
             system_prompt="system",
             use_system_prompt=True,
+            chat_template_kwargs=fixed_kwargs,
         )
 
         self.assertEqual(texts, ["system|user"])
@@ -136,6 +140,10 @@ class TestStability(unittest.TestCase):
         self.assertFalse(rendered["enable_thinking"])
         self.assertEqual(rendered["messages"][0]["role"], "system")
         self.assertIn(QWEN_MULTIPLE_CHOICE_PROMPT, rendered["messages"][1]["content"])
+        self.assertEqual(
+            rendered["chat_template_kwargs"],
+            fixed_kwargs,
+        )
 
     def test_get_next_token_log_probs_selects_last_non_padding_logits(self):
         tokenizer = FakeLogProbTokenizer()
@@ -174,7 +182,9 @@ class TestStability(unittest.TestCase):
         self.assertTrue(math.isnan(metrics["margin_p95"]))
         self.assertTrue(math.isnan(metrics["margin_p10"]))
 
-    def test_compute_reference_stability_metrics_internal_computes_entropy_margin_and_kl(self):
+    def test_compute_reference_stability_metrics_internal_computes_entropy_margin_and_kl(
+        self,
+    ):
         model = FakeAdapterModel()
         dataset = FakeDataset(
             [
@@ -225,16 +235,30 @@ class TestStability(unittest.TestCase):
         self.assertTrue(model.disable_adapter_entered)
         self.assertEqual(metrics["num_reference_examples"], 2)
         self.assertAlmostEqual(metrics["entropy_mean"], float(entropy.mean()))
-        self.assertAlmostEqual(metrics["entropy_p95"], float(torch.quantile(entropy, 0.95)))
-        self.assertAlmostEqual(metrics["entropy_p10"], float(torch.quantile(entropy, 0.10)))
+        self.assertAlmostEqual(
+            metrics["entropy_p95"], float(torch.quantile(entropy, 0.95))
+        )
+        self.assertAlmostEqual(
+            metrics["entropy_p10"], float(torch.quantile(entropy, 0.10))
+        )
         self.assertAlmostEqual(metrics["margin_mean"], float(margin.mean()))
-        self.assertAlmostEqual(metrics["margin_p95"], float(torch.quantile(margin, 0.95)))
-        self.assertAlmostEqual(metrics["margin_p10"], float(torch.quantile(margin, 0.10)))
+        self.assertAlmostEqual(
+            metrics["margin_p95"], float(torch.quantile(margin, 0.95))
+        )
+        self.assertAlmostEqual(
+            metrics["margin_p10"], float(torch.quantile(margin, 0.10))
+        )
         self.assertAlmostEqual(metrics["kl_to_base_mean"], float(kl.mean()))
-        self.assertAlmostEqual(metrics["kl_to_base_p95"], float(torch.quantile(kl, 0.95)))
-        self.assertAlmostEqual(metrics["kl_to_base_p10"], float(torch.quantile(kl, 0.10)))
+        self.assertAlmostEqual(
+            metrics["kl_to_base_p95"], float(torch.quantile(kl, 0.95))
+        )
+        self.assertAlmostEqual(
+            metrics["kl_to_base_p10"], float(torch.quantile(kl, 0.10))
+        )
 
-    def test_compute_reference_stability_metrics_internal_sets_nan_kl_without_adapter(self):
+    def test_compute_reference_stability_metrics_internal_sets_nan_kl_without_adapter(
+        self,
+    ):
         model = FakeEvalModel()
         dataset = FakeDataset([{"task_name": "scienceqa", "prompt": "p1"}])
         current_log_probs = torch.log_softmax(torch.tensor([[2.0, 1.0, 0.0]]), dim=-1)

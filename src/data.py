@@ -6,6 +6,7 @@ masks prompt tokens with ``-100`` so the loss is computed only on assistant
 answer tokens.
 """
 
+from collections.abc import Mapping
 from typing import Any
 
 import torch
@@ -56,6 +57,36 @@ def get_task_prompt(task_name: str) -> str:
     return TASK_PROMPT_MAP[task_name]
 
 
+def render_chat_template(
+    tokenizer: Any,
+    messages: list[dict[str, str]],
+    *,
+    add_generation_prompt: bool,
+    enable_thinking: bool = False,
+    chat_template_kwargs: Mapping[str, Any] | None = None,
+) -> str:
+    """Render messages using reproducible model-specific template options.
+
+    Args:
+        tokenizer: Hugging Face tokenizer providing ``apply_chat_template``.
+        messages: Chat messages to render.
+        add_generation_prompt: Whether to append the assistant prompt marker.
+        enable_thinking: Whether supported templates should enable reasoning.
+        chat_template_kwargs: Optional model-specific values passed to the template,
+            such as a fixed Llama ``date_string``.
+
+    Returns:
+        Rendered chat prompt.
+    """
+    return tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=add_generation_prompt,
+        enable_thinking=enable_thinking,
+        **dict(chat_template_kwargs or {}),
+    )
+
+
 def build_messages(
     prompt: str,
     task_prompt: str,
@@ -98,6 +129,7 @@ class ChatSFTDataset(TorchDataset):
         use_system_prompt: bool = False,
         max_length: int = 512,
         enable_thinking: bool = False,
+        chat_template_kwargs: Mapping[str, Any] | None = None,
     ) -> None:
         """Initialize a chat-format SFT dataset.
 
@@ -114,6 +146,8 @@ class ChatSFTDataset(TorchDataset):
                 full conversation. Long examples are left-truncated.
             enable_thinking: Passed through to tokenizer chat-template
                 rendering for models that support thinking blocks.
+            chat_template_args: Optional model-specific values passed to the template,
+                such as a fixed Llama ``date_string``.
         """
         self.dataset = dataset
         self.tokenizer = tokenizer
@@ -123,6 +157,7 @@ class ChatSFTDataset(TorchDataset):
         self.use_system_prompt = use_system_prompt
         self.max_length = max_length
         self.enable_thinking = enable_thinking
+        self.chat_template_kwargs = dict(chat_template_kwargs or {})
 
         # Special handling for ScienceQA to split answer and reasoning for evaluation purposes.
         if self.task_name == TASK_TRACE_SCIENCEQA:
@@ -164,18 +199,20 @@ class ChatSFTDataset(TorchDataset):
             {"role": "assistant", "content": answer_text}
         ]
 
-        prompt_text = self.tokenizer.apply_chat_template(
-            prompt_messages,
-            tokenize=False,
+        prompt_text = render_chat_template(
+            tokenizer=self.tokenizer,
+            messages=prompt_messages,
             add_generation_prompt=True,
             enable_thinking=self.enable_thinking,
+            chat_template_kwargs=self.chat_template_kwargs,
         )
 
-        full_text = self.tokenizer.apply_chat_template(
-            full_messages,
-            tokenize=False,
+        full_text = render_chat_template(
+            tokenizer=self.tokenizer,
+            messages=full_messages,
             add_generation_prompt=False,
             enable_thinking=self.enable_thinking,
+            chat_template_kwargs=self.chat_template_kwargs,
         )
 
         prompt_ids = self.tokenizer(

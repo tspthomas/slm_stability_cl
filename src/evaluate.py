@@ -10,7 +10,7 @@ import csv
 import json
 import os
 from collections import defaultdict
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from typing import Any
 
 import torch
@@ -23,7 +23,7 @@ from constants import (
     GENERATION_TOP_P,
     GENERATION_USE_CACHE,
 )
-from data import build_messages, get_task_prompt
+from data import build_messages, get_task_prompt, render_chat_template
 from utils import normalize_answer
 
 
@@ -72,6 +72,7 @@ def build_generation_text(
     system_prompt: str,
     use_system_prompt: bool,
     enable_thinking: bool = False,
+    chat_template_kwargs: Mapping[str, Any] | None = None,
 ) -> str:
     """Render one dataset example into a generation prompt string.
 
@@ -82,6 +83,7 @@ def build_generation_text(
         system_prompt: Optional system message text.
         use_system_prompt: Whether to include the system message.
         enable_thinking: Passed through to chat-template rendering.
+        chat_template_kwargs: Optional model-specific template arguments.
 
     Returns:
         Rendered chat-template string ending with an assistant generation
@@ -94,11 +96,12 @@ def build_generation_text(
         use_system_prompt=use_system_prompt,
     )
 
-    return tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
+    return render_chat_template(
+        tokenizer=tokenizer,
+        messages=messages,
         add_generation_prompt=True,
         enable_thinking=enable_thinking,
+        chat_template_kwargs=chat_template_kwargs,
     )
 
 
@@ -529,6 +532,10 @@ def evaluate_accuracy(
                 system_prompt=system_prompt,
                 use_system_prompt=use_system_prompt,
                 enable_thinking=False,
+                chat_template_kwargs=config.get("model", {}).get(
+                    "chat_template_kwargs",
+                    {},
+                ),
             )
             for example in examples
         ]
@@ -669,6 +676,10 @@ def _evaluate_reference_set(
                 system_prompt=system_prompt,
                 use_system_prompt=use_system_prompt,
                 enable_thinking=False,
+                chat_template_kwargs=config.get("model", {}).get(
+                    "chat_template_kwargs",
+                    {},
+                ),
             )
             for example, task_name in zip(examples, task_names)
         ]
