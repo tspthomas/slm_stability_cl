@@ -50,6 +50,7 @@ class FakePromptTokenizer:
         tokenize=False,
         add_generation_prompt=False,
         enable_thinking=False,
+        **chat_template_kwargs,
     ):
         self.rendered_messages.append(
             {
@@ -57,6 +58,7 @@ class FakePromptTokenizer:
                 "tokenize": tokenize,
                 "add_generation_prompt": add_generation_prompt,
                 "enable_thinking": enable_thinking,
+                "chat_template_kwargs": chat_template_kwargs,
             }
         )
         return "|".join(message["role"] for message in messages)
@@ -122,12 +124,14 @@ class TestStability(unittest.TestCase):
 
     def test_build_prompt_texts_renders_task_specific_prompts(self):
         tokenizer = FakePromptTokenizer()
+        fixed_kwargs = {"date_string": "26 Jul 2024"}
 
         texts = build_prompt_texts(
             examples=[{"task_name": " ScienceQA ", "prompt": "Question?"}],
             tokenizer=tokenizer,
             system_prompt="system",
             use_system_prompt=True,
+            chat_template_kwargs=fixed_kwargs,
         )
 
         self.assertEqual(texts, ["system|user"])
@@ -136,6 +140,10 @@ class TestStability(unittest.TestCase):
         self.assertFalse(rendered["enable_thinking"])
         self.assertEqual(rendered["messages"][0]["role"], "system")
         self.assertIn(QWEN_MULTIPLE_CHOICE_PROMPT, rendered["messages"][1]["content"])
+        self.assertEqual(
+            rendered["chat_template_kwargs"],
+            fixed_kwargs,
+        )
 
     def test_get_next_token_log_probs_selects_last_non_padding_logits(self):
         tokenizer = FakeLogProbTokenizer()

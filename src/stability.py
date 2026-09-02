@@ -10,7 +10,7 @@ import csv
 import json
 import math
 import os
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from typing import Any
 
 import torch
@@ -18,7 +18,7 @@ import torch.nn.functional as F
 from datasets import load_dataset
 from tqdm.auto import tqdm
 
-from data import build_messages, get_task_prompt
+from data import build_messages, get_task_prompt, render_chat_template
 
 
 def batch_iter(dataset: Sequence[Any], batch_size: int) -> Iterator[list[Any]]:
@@ -41,6 +41,7 @@ def build_prompt_texts(
     tokenizer: Any,
     system_prompt: str,
     use_system_prompt: bool,
+    chat_template_kwargs: Mapping[str, Any] | None = None,
 ) -> list[str]:
     """Render reference examples into chat-template generation prompts.
 
@@ -49,6 +50,7 @@ def build_prompt_texts(
         tokenizer: Tokenizer implementing ``apply_chat_template``.
         system_prompt: Optional system message content.
         use_system_prompt: Whether to include the system message.
+        chat_template_kwargs: Optional model-specific template arguments.
 
     Returns:
         Rendered prompt strings ending with an assistant generation prompt.
@@ -66,11 +68,12 @@ def build_prompt_texts(
             use_system_prompt=use_system_prompt,
         )
 
-        text = tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
+        text = render_chat_template(
+            tokenizer=tokenizer,
+            messages=messages,
             add_generation_prompt=True,
             enable_thinking=False,
+            chat_template_kwargs=chat_template_kwargs,
         )
 
         texts.append(text)
@@ -167,6 +170,7 @@ def _compute_reference_stability_metrics(
     batch_size: int = 4,
     max_length: int = 512,
     use_system_prompt: bool = True,
+    chat_template_kwargs: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Compute stability metrics for one checkpoint on the reference set.
 
@@ -183,6 +187,7 @@ def _compute_reference_stability_metrics(
         batch_size: Reference-set batch size.
         max_length: Maximum prompt length during tokenization.
         use_system_prompt: Whether to include the system message.
+        chat_template_kwargs: Optional model-specific template arguments.
 
     Returns:
         Flat metrics dictionary with entropy, margin, and KL summaries.
@@ -206,6 +211,7 @@ def _compute_reference_stability_metrics(
             tokenizer=tokenizer,
             system_prompt=system_prompt,
             use_system_prompt=use_system_prompt,
+            chat_template_kwargs=chat_template_kwargs,
         )
 
         current_log_probs = get_next_token_log_probs(
@@ -368,6 +374,10 @@ def compute_reference_stability_metrics(
         checkpoint_task=checkpoint_task,
         batch_size=config["reference_set_evaluation"].get("batch_size", 4),
         max_length=config["training"]["max_length"],
+        chat_template_kwargs=config.get("model", {}).get(
+            "chat_template_kwargs",
+            {},
+        ),
     )
 
     # The base checkpoint is its own reference model, so KL to base is zero.

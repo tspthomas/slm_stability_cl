@@ -21,6 +21,7 @@ def load_data_loader(
     shuffle: bool,
     max_length: int,
     batch_size: int,
+    chat_template_kwargs: dict[str, object] | None = None,
 ) -> DataLoader:
     dataset = load_dataset("json", data_files=data_path, split="train")
 
@@ -31,6 +32,7 @@ def load_data_loader(
         system_prompt=DEFAULT_SYSTEM_PROMPT,
         max_length=max_length,
         enable_thinking=False,
+        chat_template_kwargs=chat_template_kwargs,
     )
 
     return DataLoader(
@@ -143,6 +145,10 @@ def main(config_path: str):
                 shuffle=True,
                 max_length=config["training"]["max_length"],
                 batch_size=config["training"]["batch_size"],
+                chat_template_kwargs=config.get("model", {}).get(
+                    "chat_template_kwargs",
+                    {},
+                ),
             )
             print(
                 f"Number of training examples for task {task}-{task_name}: {len(train_data_loader.dataset)}"

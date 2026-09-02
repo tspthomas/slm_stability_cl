@@ -37,6 +37,7 @@ class FakeTokenizer:
         tokenize=False,
         add_generation_prompt=False,
         enable_thinking=False,
+        **chat_template_kwargs,
     ):
         self.rendered_messages.append(
             {
@@ -44,12 +45,11 @@ class FakeTokenizer:
                 "tokenize": tokenize,
                 "add_generation_prompt": add_generation_prompt,
                 "enable_thinking": enable_thinking,
+                "chat_template_kwargs": chat_template_kwargs,
             }
         )
 
-        text = "".join(
-            f"<{message['role']}>:{message['content']}\n" for message in messages
-        )
+        text = "".join(f"<{message['role']}>:{message['content']}\n" for message in messages)
         if add_generation_prompt:
             text += "<assistant>:"
 
@@ -218,6 +218,28 @@ class TestData(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "neither pad_token_id nor eos_token_id"):
             SFTCollator(tokenizer)
+
+    def test_chat_sft_dataset_forwards_chat_template_kwargs(self):
+        tokenizer = FakeTokenizer()
+        dataset = FakeDataset([{"prompt": "Question?", "answer": "A"}])
+        fixed_kwargs = {"date_string": "26 Jul 2024"}
+
+        _ = ChatSFTDataset(
+            dataset=dataset,
+            tokenizer=tokenizer,
+            task_name="fomc",
+            max_length=512,
+            chat_template_kwargs=fixed_kwargs,
+        )[0]
+
+        # Training renders the prompt and the complete prompt-answer conversation.
+        self.assertEqual(len(tokenizer.rendered_messages), 2)
+
+        for rendered in tokenizer.rendered_messages:
+            self.assertEqual(
+                rendered["chat_template_kwargs"],
+                fixed_kwargs,
+            )
 
 
 if __name__ == "__main__":

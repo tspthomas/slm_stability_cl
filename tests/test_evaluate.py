@@ -16,10 +16,11 @@ from constants import (
 )
 from evaluate import (
     _eos_found,
+    _evaluate_reference_set,
+    append_score_rows,
     batch_iter,
     build_generation_kwargs,
     build_generation_text,
-    append_score_rows,
     evaluate_accuracy,
     evaluate_checkpoint_on_all_tasks,
     evaluate_reference_set,
@@ -30,7 +31,6 @@ from evaluate import (
     save_eval_results,
     save_reference_results,
     trim_after_eos,
-    _evaluate_reference_set,
 )
 
 
@@ -60,6 +60,7 @@ class FakeTokenizer:
         tokenize=False,
         add_generation_prompt=False,
         enable_thinking=False,
+        **chat_template_kwargs,
     ):
         self.rendered_messages.append(
             {
@@ -67,6 +68,7 @@ class FakeTokenizer:
                 "tokenize": tokenize,
                 "add_generation_prompt": add_generation_prompt,
                 "enable_thinking": enable_thinking,
+                "chat_template_kwargs": chat_template_kwargs,
             }
         )
         return "|".join(message["role"] for message in messages)
@@ -157,6 +159,7 @@ class TestEvaluateHelpers(unittest.TestCase):
 
     def test_build_generation_text_renders_chat_template(self):
         tokenizer = FakeTokenizer()
+        fixed_kwargs = {"date_string": "26 Jul 2024"}
 
         text = build_generation_text(
             tokenizer=tokenizer,
@@ -165,6 +168,7 @@ class TestEvaluateHelpers(unittest.TestCase):
             system_prompt="system prompt",
             use_system_prompt=True,
             enable_thinking=True,
+            chat_template_kwargs=fixed_kwargs,
         )
 
         self.assertEqual(text, "system|user")
@@ -172,6 +176,10 @@ class TestEvaluateHelpers(unittest.TestCase):
         self.assertEqual(tokenizer.rendered_messages[0]["enable_thinking"], True)
         self.assertEqual(tokenizer.rendered_messages[0]["messages"][0]["role"], "system")
         self.assertEqual(tokenizer.rendered_messages[0]["messages"][1]["role"], "user")
+        self.assertEqual(
+            tokenizer.rendered_messages[0]["chat_template_kwargs"],
+            fixed_kwargs,
+        )
 
     def test_get_pad_token_id_prefers_pad_and_falls_back_to_eos(self):
         self.assertEqual(get_pad_token_id(FakeTokenizer(pad_token_id=7)), 7)
