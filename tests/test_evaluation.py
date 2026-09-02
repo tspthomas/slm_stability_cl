@@ -8,13 +8,13 @@ from unittest.mock import patch
 
 import torch
 
-import evaluate
+import evaluation
 from constants import (
     GENERATION_DO_SAMPLE,
     GENERATION_USE_CACHE,
     QWEN_MULTIPLE_CHOICE_PROMPT,
 )
-from evaluate import (
+from evaluation import (
     _eos_found,
     _evaluate_reference_set,
     append_score_rows,
@@ -382,7 +382,7 @@ class TestEvaluateWorkflows(unittest.TestCase):
 
             with (
                 patch.object(
-                    evaluate,
+                    evaluation,
                     "evaluate_accuracy",
                     return_value={
                         "accuracy": 1.0,
@@ -422,10 +422,10 @@ class TestEvaluateWorkflows(unittest.TestCase):
         )
 
         with (
-            patch.object(evaluate, "load_dataset", return_value=dataset),
-            patch.object(evaluate, "tqdm", side_effect=lambda iterable, **_: iterable),
+            patch.object(evaluation, "load_dataset", return_value=dataset),
+            patch.object(evaluation, "tqdm", side_effect=lambda iterable, **_: iterable),
             patch.object(
-                evaluate,
+                evaluation,
                 "generate_batch_from_texts",
                 return_value=[("A", False), ("C", True)],
             ),
@@ -459,10 +459,10 @@ class TestEvaluateWorkflows(unittest.TestCase):
         )
 
         with (
-            patch.object(evaluate, "load_dataset", return_value=dataset),
-            patch.object(evaluate, "tqdm", side_effect=lambda iterable, **_: iterable),
+            patch.object(evaluation, "load_dataset", return_value=dataset),
+            patch.object(evaluation, "tqdm", side_effect=lambda iterable, **_: iterable),
             patch.object(
-                evaluate,
+                evaluation,
                 "generate_batch_from_texts",
                 return_value=[("A", False)],
             ),
@@ -520,7 +520,7 @@ class TestEvaluateWorkflows(unittest.TestCase):
             }
             with (
                 patch.object(
-                    evaluate,
+                    evaluation,
                     "_evaluate_reference_set",
                     return_value=reference_metrics,
                 ) as eval_reference,
@@ -568,10 +568,10 @@ class TestEvaluateWorkflows(unittest.TestCase):
         }
 
         with (
-            patch.object(evaluate, "load_dataset", return_value=dataset),
-            patch.object(evaluate, "tqdm", side_effect=lambda iterable, **_: iterable),
+            patch.object(evaluation, "load_dataset", return_value=dataset),
+            patch.object(evaluation, "tqdm", side_effect=lambda iterable, **_: iterable),
             patch.object(
-                evaluate,
+                evaluation,
                 "generate_batch_from_texts",
                 return_value=[("A", False), ("4", False)],
             ),
