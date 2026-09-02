@@ -182,9 +182,7 @@ class TestStability(unittest.TestCase):
         self.assertTrue(math.isnan(metrics["margin_p95"]))
         self.assertTrue(math.isnan(metrics["margin_p10"]))
 
-    def test_compute_reference_stability_metrics_internal_computes_entropy_margin_and_kl(
-        self,
-    ):
+    def test_compute_reference_stability_metrics_internal_computes_entropy_margin_and_kl(self):
         model = FakeAdapterModel()
         dataset = FakeDataset(
             [
@@ -235,30 +233,16 @@ class TestStability(unittest.TestCase):
         self.assertTrue(model.disable_adapter_entered)
         self.assertEqual(metrics["num_reference_examples"], 2)
         self.assertAlmostEqual(metrics["entropy_mean"], float(entropy.mean()))
-        self.assertAlmostEqual(
-            metrics["entropy_p95"], float(torch.quantile(entropy, 0.95))
-        )
-        self.assertAlmostEqual(
-            metrics["entropy_p10"], float(torch.quantile(entropy, 0.10))
-        )
+        self.assertAlmostEqual(metrics["entropy_p95"], float(torch.quantile(entropy, 0.95)))
+        self.assertAlmostEqual(metrics["entropy_p10"], float(torch.quantile(entropy, 0.10)))
         self.assertAlmostEqual(metrics["margin_mean"], float(margin.mean()))
-        self.assertAlmostEqual(
-            metrics["margin_p95"], float(torch.quantile(margin, 0.95))
-        )
-        self.assertAlmostEqual(
-            metrics["margin_p10"], float(torch.quantile(margin, 0.10))
-        )
+        self.assertAlmostEqual(metrics["margin_p95"], float(torch.quantile(margin, 0.95)))
+        self.assertAlmostEqual(metrics["margin_p10"], float(torch.quantile(margin, 0.10)))
         self.assertAlmostEqual(metrics["kl_to_base_mean"], float(kl.mean()))
-        self.assertAlmostEqual(
-            metrics["kl_to_base_p95"], float(torch.quantile(kl, 0.95))
-        )
-        self.assertAlmostEqual(
-            metrics["kl_to_base_p10"], float(torch.quantile(kl, 0.10))
-        )
+        self.assertAlmostEqual(metrics["kl_to_base_p95"], float(torch.quantile(kl, 0.95)))
+        self.assertAlmostEqual(metrics["kl_to_base_p10"], float(torch.quantile(kl, 0.10)))
 
-    def test_compute_reference_stability_metrics_internal_sets_nan_kl_without_adapter(
-        self,
-    ):
+    def test_compute_reference_stability_metrics_internal_sets_nan_kl_without_adapter(self):
         model = FakeEvalModel()
         dataset = FakeDataset([{"task_name": "scienceqa", "prompt": "p1"}])
         current_log_probs = torch.log_softmax(torch.tensor([[2.0, 1.0, 0.0]]), dim=-1)

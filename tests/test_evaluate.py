@@ -88,9 +88,7 @@ class FakeGenerationTokenizer(FakeTokenizer):
         self.padding_side = "right"
         self.tokenized_padding_sides = []
 
-    def __call__(
-        self, texts, return_tensors=None, padding=None, add_special_tokens=None
-    ):
+    def __call__(self, texts, return_tensors=None, padding=None, add_special_tokens=None):
         self.tokenized_padding_sides.append(self.padding_side)
         input_ids = torch.tensor(
             [
@@ -176,9 +174,7 @@ class TestEvaluateHelpers(unittest.TestCase):
         self.assertEqual(text, "system|user")
         self.assertEqual(tokenizer.rendered_messages[0]["add_generation_prompt"], True)
         self.assertEqual(tokenizer.rendered_messages[0]["enable_thinking"], True)
-        self.assertEqual(
-            tokenizer.rendered_messages[0]["messages"][0]["role"], "system"
-        )
+        self.assertEqual(tokenizer.rendered_messages[0]["messages"][0]["role"], "system")
         self.assertEqual(tokenizer.rendered_messages[0]["messages"][1]["role"], "user")
         self.assertEqual(
             tokenizer.rendered_messages[0]["chat_template_kwargs"],
@@ -193,16 +189,12 @@ class TestEvaluateHelpers(unittest.TestCase):
         )
 
     def test_get_pad_token_id_requires_pad_or_eos(self):
-        with self.assertRaisesRegex(
-            ValueError, "neither pad_token_id nor eos_token_id"
-        ):
+        with self.assertRaisesRegex(ValueError, "neither pad_token_id nor eos_token_id"):
             get_pad_token_id(FakeTokenizer(pad_token_id=None, eos_token_id=None))
 
     def test_get_eos_token_ids_collects_unique_tokenizer_model_and_chat_ids(self):
         tokenizer = FakeTokenizer(eos_token_id=99)
-        model = SimpleNamespace(
-            generation_config=SimpleNamespace(eos_token_id=[99, 102])
-        )
+        model = SimpleNamespace(generation_config=SimpleNamespace(eos_token_id=[99, 102]))
 
         self.assertEqual(get_eos_token_ids(tokenizer, model), [99, 102, 100, 101])
 
@@ -346,9 +338,7 @@ class TestEvaluateWorkflows(unittest.TestCase):
             append_score_rows(tmpdir, rows, filename="scores.csv")
             append_score_rows(tmpdir, rows, filename="scores.csv")
 
-            with open(
-                os.path.join(tmpdir, "scores.csv"), newline="", encoding="utf-8"
-            ) as f:
+            with open(os.path.join(tmpdir, "scores.csv"), newline="", encoding="utf-8") as f:
                 csv_rows = list(csv.DictReader(f))
 
         self.assertEqual(len(csv_rows), 2)

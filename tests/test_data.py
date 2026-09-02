@@ -49,9 +49,7 @@ class FakeTokenizer:
             }
         )
 
-        text = "".join(
-            f"<{message['role']}>:{message['content']}\n" for message in messages
-        )
+        text = "".join(f"<{message['role']}>:{message['content']}\n" for message in messages)
         if add_generation_prompt:
             text += "<assistant>:"
 
@@ -103,9 +101,7 @@ class TestData(unittest.TestCase):
             use_system_prompt=False,
         )
 
-        self.assertEqual(
-            messages, [{"role": "user", "content": "Choose one.\n\nQuestion?"}]
-        )
+        self.assertEqual(messages, [{"role": "user", "content": "Choose one.\n\nQuestion?"}])
 
     def test_chat_sft_dataset_masks_prompt_tokens(self):
         tokenizer = FakeTokenizer()
@@ -220,9 +216,7 @@ class TestData(unittest.TestCase):
         tokenizer.pad_token_id = None
         tokenizer.eos_token_id = None
 
-        with self.assertRaisesRegex(
-            ValueError, "neither pad_token_id nor eos_token_id"
-        ):
+        with self.assertRaisesRegex(ValueError, "neither pad_token_id nor eos_token_id"):
             SFTCollator(tokenizer)
 
     def test_chat_sft_dataset_forwards_chat_template_kwargs(self):
