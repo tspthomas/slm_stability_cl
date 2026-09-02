@@ -358,8 +358,7 @@ def compute_reference_stability_metrics(
         return {}, ""
 
     print(
-        f"Computing stability metrics | "
-        f"seed={seed}, step={step}, checkpoint={checkpoint_task}"
+        f"Computing stability metrics | " f"seed={seed}, step={step}, checkpoint={checkpoint_task}"
     )
 
     stability_metrics = _compute_reference_stability_metrics(
