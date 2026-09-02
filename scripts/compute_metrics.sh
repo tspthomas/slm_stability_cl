@@ -2,11 +2,8 @@
 
 experiments=(
   "qwen35_08b_paper"
-  "qwen35_08b_paper_321"
   "llama32_1b_paper"
-  "llama32_1b_paper_321"
   "gemma3_1b_paper"
-  "gemma3_1b_paper_321"
 )
 
 echo -e "\033[36mComputing metrics for experiments (order 1,2,3)\033[0m"
@@ -21,10 +18,9 @@ done
 
 
 experiments_321=(
-  # "qwen35_08b_paper_321_kl_fixed"
-  # "llama32_1b_cl_paper_321_kl_fixed"
-  # "gemma3_1b_cl_paper_321_kl_fixed"
-  "llama32_1b_paper_321_date_fixed"
+  "qwen35_08b_paper_321"
+  "llama32_1b_paper_321"
+  "gemma3_1b_paper_321"
 )
 
 echo -e "\033[36mComputing metrics for experiments (order 3,2,1)\033[0m"
