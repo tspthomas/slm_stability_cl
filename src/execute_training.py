@@ -8,7 +8,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from constants import DEFAULT_SYSTEM_PROMPT
 from data import ChatSFTDataset, SFTCollator
-from evaluate import evaluate_checkpoint_on_all_tasks, evaluate_reference_set
+from evaluation import evaluate_checkpoint_on_all_tasks, evaluate_reference_set
 from stability import compute_reference_stability_metrics
 from train import build_lora_model, train_one_task
 from utils import get_device, is_config_lora, set_seed
@@ -204,9 +204,7 @@ def main(config_path: str):
 
             # save model checkpoint
             print(f"Saving model checkpoint for task: {task}-{task_name}")
-            model_save_path = (
-                f"{config['experiment']['output_dir']}/model_{task}_{seed}"
-            )
+            model_save_path = f"{config['experiment']['output_dir']}/model_{task}_{seed}"
             model_save_path = (
                 model_save_path + "_lora" if is_config_lora(config) else model_save_path
             )
@@ -228,9 +226,7 @@ def main(config_path: str):
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Run longitudinal personalization experiment."
-    )
+    parser = argparse.ArgumentParser(description="Run longitudinal personalization experiment.")
     parser.add_argument(
         "--config",
         type=str,

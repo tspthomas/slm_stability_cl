@@ -26,7 +26,7 @@ src/
   config/              Paper experiment configurations
   constants.py         Task prompts and shared defaults
   data.py              Chat SFT dataset and collator utilities
-  evaluate.py          Accuracy and reference-set evaluation
+  evaluation.py          Accuracy and reference-set evaluation
   stability.py         Reference stability metrics
   train.py             LoRA setup and per-task training loop
   execute_training.py  Main experiment entry point
