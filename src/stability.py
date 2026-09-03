@@ -121,9 +121,18 @@ def get_next_token_log_probs(
 
     logits = outputs.logits  # [batch, seq_len, vocab]
 
-    # Last non-padding token for each example
+    # Find the absolute position of the rightmost non-padding token. Token
+    # counts (attention_mask.sum() - 1) are only valid positions for
+    # right-padded inputs, while this function deliberately uses left padding.
     attention_mask = inputs["attention_mask"]
-    last_indices = attention_mask.sum(dim=1) - 1
+    positions = torch.arange(
+        attention_mask.size(1),
+        device=attention_mask.device,
+    ).expand_as(attention_mask)
+    last_indices = positions.masked_fill(attention_mask == 0, -1).amax(dim=1)
+
+    if (last_indices < 0).any():
+        raise ValueError("Encountered a prompt with no non-padding tokens")
 
     batch_indices = torch.arange(logits.size(0), device=logits.device)
     next_token_logits = logits[batch_indices, last_indices, :].float()
