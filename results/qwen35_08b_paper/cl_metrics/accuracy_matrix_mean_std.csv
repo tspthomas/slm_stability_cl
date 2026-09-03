@@ -1,0 +1,5 @@
+step,checkpoint,checkpoint_task,fomc,numgluecm,scienceqa
+0,Base,base,0.250 ± 0.000,0.370 ± 0.000,0.520 ± 0.000
+1,After task_1,task_1,0.533 ± 0.076,0.379 ± 0.019,0.660 ± 0.035
+2,After task_2,task_2,0.540 ± 0.053,0.490 ± 0.026,0.800 ± 0.000
+3,After task_3,task_3,0.577 ± 0.042,0.379 ± 0.056,0.817 ± 0.006

@@ -1,7 +1,7 @@
 experiment:
   name: gemma3_1b_paper_321
-  output_dir: outputs/gemma3_1b_cl_paper_321
-  results_dir: results/gemma3_1b_cl_paper_321
+  output_dir: outputs/gemma3_1b_paper_321
+  results_dir: results/gemma3_1b_paper_321
   seed: [33, 42, 123]
   system_prompt: false
 

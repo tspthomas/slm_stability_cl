@@ -1,7 +1,7 @@
 experiment:
   name: llama32_1b_paper
-  output_dir: outputs/llama32_1b_cl
-  results_dir: results/llama32_1b_cl
+  output_dir: outputs/llama32_1b_paper
+  results_dir: results/llama32_1b_paper
   seed: [33, 42, 123]
   system_prompt: false
 
