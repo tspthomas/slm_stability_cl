@@ -10,6 +10,23 @@ The code is intended to make the paper experiments easier to inspect and rerun.
 It is deliberately lightweight: configuration files define the model, task
 order, training settings, evaluation splits, and output locations.
 
+## Paper
+
+[Continual Learning for Sequential Personalization of Small Language Models: A
+Stability Monitoring Analysis](https://arxiv.org/abs/2606.27634)
+
+## Result Versions
+
+- `results/v1/` contains the results associated with the original paper and
+  arXiv v1.
+- `results/v2/` contains the corrected stability results used by the revised
+  manuscript intended for arXiv v2.
+
+The correction affects KL divergence, entropy, and margin. Training, task
+accuracy, and continual-learning metrics are unaffected. The implementation
+fix and regression tests are documented in
+[PR #3](https://github.com/tspthomas/slm_stability_cl/pull/3).
+
 ## What Is Included
 
 - Sequential supervised fine-tuning over three tasks: FOMC, ScienceQA, and
@@ -33,6 +50,10 @@ src/
 
 data/
   llm-cl-*/            Task splits and reference sets
+
+results/
+  v1/                  Original paper and arXiv v1 results
+  v2/                  Corrected results for the revised manuscript
 
 scripts/
   combine_scores.py        Aggregate accuracy CSVs
@@ -85,16 +106,16 @@ Aggregate task accuracy across seeds:
 ```bash
 uv run scripts/combine_scores.py \
   --run-dir outputs/qwen35_08b_paper \
-  --output-dir results/qwen35_08b_paper/cl_metrics
+  --output-dir results/v2/qwen35_08b_paper/cl_metrics
 ```
 
 Compute continual-learning summary metrics from the combined scores:
 
 ```bash
 uv run scripts/compute_metrics.py \
-  --scores-csv results/qwen35_08b_paper/cl_metrics/scores_all.csv \
+  --scores-csv results/v2/qwen35_08b_paper/cl_metrics/scores_all.csv \
   --task-order task_1,task_2,task_3 \
-  --output-dir results/qwen35_08b_paper/cl_metrics
+  --output-dir results/v2/qwen35_08b_paper/cl_metrics
 ```
 
 This writes per-seed and summary CSVs for metrics such as overall performance,
@@ -106,7 +127,7 @@ Aggregate stability metrics:
 ```bash
 uv run scripts/analyze_stability.py \
   --input outputs/qwen35_08b_paper \
-  --output-dir results/qwen35_08b_paper/stability_metrics
+  --output-dir results/v2/qwen35_08b_paper/stability_metrics
 ```
 
 The `scripts/` directory also includes small `.sh` wrappers showing the command
@@ -131,8 +152,13 @@ These tests focus on deterministic helper behavior, data formatting, training
 loop mechanics, evaluation bookkeeping, and file-output formats. They avoid
 loading real models or running full training jobs.
 
-## Note
+## Citation
 
-This is research code associated with an active paper submission. Interfaces,
-configs, and analysis scripts may continue to evolve as experiments are cleaned
-up and documented.
+```bibtex
+@article{paula2026continual,
+  title   = {Continual Learning for Sequential Personalization of Small Language Models: A Stability Monitoring Analysis},
+  author  = {Paula, Thomas S. and Kupssinsk{\"u}, Lucas S. and Barros, Rodrigo C.},
+  journal = {arXiv preprint arXiv:2606.27634},
+  year    = {2026}
+}
+```
