@@ -81,8 +81,8 @@ class FakeLogProbTokenizer:
         self.padding_sides_seen.append(self.padding_side)
         return FakeBatchEncoding(
             {
-                "input_ids": torch.tensor([[1, 2, 0], [3, 4, 5]]),
-                "attention_mask": torch.tensor([[1, 1, 0], [1, 1, 1]]),
+                "input_ids": torch.tensor([[0, 1, 2], [3, 4, 5]]),
+                "attention_mask": torch.tensor([[0, 1, 1], [1, 1, 1]]),
             }
         )
 
@@ -90,7 +90,8 @@ class FakeLogProbTokenizer:
 class FakeLogProbModel:
     def __call__(self, **inputs):
         logits = torch.zeros((2, 3, 3), dtype=torch.float32)
-        logits[0, 1, :] = torch.tensor([0.0, 1.0, 2.0])
+        logits[0, 1, :] = torch.tensor([3.0, 0.0, -1.0])
+        logits[0, 2, :] = torch.tensor([0.0, 1.0, 2.0])
         logits[1, 2, :] = torch.tensor([2.0, 0.0, -1.0])
         return SimpleNamespace(logits=logits)
 
@@ -145,7 +146,7 @@ class TestStability(unittest.TestCase):
             fixed_kwargs,
         )
 
-    def test_get_next_token_log_probs_selects_last_non_padding_logits(self):
+    def test_get_next_token_log_probs_selects_last_token_with_left_padding(self):
         tokenizer = FakeLogProbTokenizer()
         model = FakeLogProbModel()
 
