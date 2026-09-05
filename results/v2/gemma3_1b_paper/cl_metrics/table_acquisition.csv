@@ -1,0 +1,5 @@
+Step,Checkpoint,Current task,Current accuracy,Δ current vs base,Average over all tasks
+0,Base,—,—,—,0.403 ± 0.000
+1,After task_1,task_1,0.547 ± 0.012,0.327 ± 0.012,0.522 ± 0.011
+2,After task_2,task_2,0.663 ± 0.061,0.043 ± 0.061,0.438 ± 0.041
+3,After task_3,task_3,0.136 ± 0.021,-0.235 ± 0.021,0.320 ± 0.029

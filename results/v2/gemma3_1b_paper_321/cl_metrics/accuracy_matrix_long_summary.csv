@@ -1,0 +1,13 @@
+step,checkpoint,checkpoint_task,eval_task,eval_task_name,accuracy_mean,accuracy_std,n_seeds
+0,Base,base,task_1,fomc,0.22,0.0,3
+0,Base,base,task_2,scienceqa,0.62,0.0,3
+0,Base,base,task_3,numgluecm,0.3703703703703703,0.0,3
+1,After task_3,task_3,task_1,fomc,0.22,0.0,3
+1,After task_3,task_3,task_2,scienceqa,0.6533333333333333,0.0057735026918962545,3
+1,After task_3,task_3,task_3,numgluecm,0.09465020576131682,0.025699580240322616,3
+2,After task_2,task_2,task_1,fomc,0.22,0.0,3
+2,After task_2,task_2,task_2,scienceqa,0.6766666666666667,0.047258156262526115,3
+2,After task_2,task_2,task_3,numgluecm,0.09876543209876541,0.012345679012345696,3
+3,After task_1,task_1,task_1,fomc,0.48333333333333334,0.060277137733417106,3
+3,After task_1,task_1,task_2,scienceqa,0.6466666666666666,0.05859465277082314,3
+3,After task_1,task_1,task_3,numgluecm,0.09053497942386823,0.03106927751140226,3
